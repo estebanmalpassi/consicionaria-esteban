@@ -64,7 +64,9 @@ const STEP_FIELDS: Record<StepId, FieldPath<DealershipOnboardingValues>[]> = {
 };
 
 export interface DealershipOnboardingWizardProps {
-  onSubmit?: (values: DealershipOnboardingValues) => Promise<void> | void;
+  onSubmit?: (
+    values: DealershipOnboardingValues
+  ) => Promise<{ ok: boolean; error?: string } | void> | void;
   className?: string;
 }
 
@@ -112,10 +114,17 @@ export function DealershipOnboardingWizard({
 
   const goBack = () => setStepIndex((i) => Math.max(i - 1, 0));
 
+  const [submitError, setSubmitError] = React.useState<string | null>(null);
+
   const handleFinalSubmit = form.handleSubmit(async (values) => {
     setSubmitting(true);
+    setSubmitError(null);
     try {
-      await onSubmit?.(values);
+      const result = await onSubmit?.(values);
+      if (result && !result.ok) {
+        setSubmitError(result.error ?? "No pudimos enviar tu solicitud. Probá de nuevo.");
+        return;
+      }
       setSubmitted(true);
     } finally {
       setSubmitting(false);
@@ -185,6 +194,10 @@ export function DealershipOnboardingWizard({
         </AnimatePresence>
 
         <Separator className="my-6" />
+
+        {submitError && (
+          <p className="text-destructive mb-4 text-sm">{submitError}</p>
+        )}
 
         <div className="flex justify-between">
           <Button type="button" variant="outline" onClick={goBack} disabled={stepIndex === 0}>
