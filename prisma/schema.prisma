@@ -1,0 +1,384 @@
+// Concesionaria Esteban — Marketplace & Dealer SaaS (Argentina)
+// Prisma schema: identity/KYC, inventory, legal-document verification, buyer discovery, billing.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------------------------------------------------------------------
+// Identity & access
+// ---------------------------------------------------------------------------
+
+enum Role {
+  BUYER
+  DEALER_OWNER
+  DEALER_STAFF
+  ADMIN
+}
+
+model User {
+  id            String   @id @default(cuid())
+  email         String   @unique
+  passwordHash  String
+  name          String
+  phone         String?
+  avatarUrl     String?
+  role          Role     @default(BUYER)
+  emailVerified DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // A staff/owner user belongs to at most one dealership.
+  dealershipId String?
+  dealership   Dealership? @relation("DealershipStaff", fields: [dealershipId], references: [id])
+
+  ownedDealership Dealership? @relation("DealershipOwner")
+
+  savedListings SavedListing[]
+  swipeActions  SwipeAction[]
+  reviewedDocs  DealershipDocument[] @relation("DocumentReviewer")
+  auditLogs     AuditLog[]
+
+  @@index([dealershipId])
+}
+
+// ---------------------------------------------------------------------------
+// Dealership onboarding & KYC
+// ---------------------------------------------------------------------------
+
+enum DealershipStatus {
+  PENDING          // registered, nothing submitted yet
+  DOCS_SUBMITTED   // CUIT + docs uploaded, awaiting AFIP/automated checks
+  IN_REVIEW        // admin manual review
+  VERIFIED         // can publish listings
+  REJECTED
+  SUSPENDED        // previously verified, access revoked (fraud, disputes)
+}
+
+model Dealership {
+  id            String           @id @default(cuid())
+  legalName     String
+  tradeName     String
+  cuit          String           @unique // Argentine tax ID, validated on submit
+  status        DealershipStatus @default(PENDING)
+
+  // AFIP / fiscal
+  afipConditionIva String?       // e.g. "Responsable Inscripto", "Monotributo"
+  afipCredentialId String?       // reference to encrypted-at-rest credential store, never raw secrets
+
+  addressStreet String?
+  addressCity   String?
+  province      String?
+  postalCode    String?
+  phone         String?
+  website       String?
+
+  ownerId String  @unique
+  owner   User    @relation("DealershipOwner", fields: [ownerId], references: [id])
+  staff   User[]  @relation("DealershipStaff")
+
+  documents     DealershipDocument[]
+  vehicles      Vehicle[]
+  subscription  Subscription?
+  invoices      Invoice[]
+  auditLogs     AuditLog[]
+
+  verifiedAt DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  @@index([status])
+}
+
+enum DealershipDocumentType {
+  CUIT_CONSTANCIA        // AFIP "Constancia de Inscripción"
+  AFIP_CREDENTIALS        // clave fiscal delegation / WSAA certificate reference
+  LEGAL_ID                // DNI of the legal representative
+  BUSINESS_LICENSE        // habilitación municipal / comercial
+  POWER_OF_ATTORNEY       // poder, when representative != owner
+}
+
+enum DocumentReviewStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model DealershipDocument {
+  id           String                 @id @default(cuid())
+  dealershipId String
+  dealership   Dealership             @relation(fields: [dealershipId], references: [id], onDelete: Cascade)
+
+  type         DealershipDocumentType
+  fileUrl      String
+  status       DocumentReviewStatus   @default(PENDING)
+
+  reviewedById String?
+  reviewedBy   User?                  @relation("DocumentReviewer", fields: [reviewedById], references: [id])
+  reviewNotes  String?
+  reviewedAt   DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([dealershipId])
+  @@index([status])
+}
+
+// ---------------------------------------------------------------------------
+// Vehicle inventory
+// ---------------------------------------------------------------------------
+
+enum VehicleStatus {
+  DRAFT                 // photos + patente entered, verification not started
+  PENDING_VERIFICATION  // verification checks running
+  PUBLISHED             // all mandatory docs verified, visible to buyers
+  PAUSED                // temporarily hidden by dealer
+  SOLD
+  REJECTED              // failed verification / fraud flag
+}
+
+enum FuelType {
+  NAFTA
+  DIESEL
+  GNC
+  HIBRIDO
+  ELECTRICO
+}
+
+enum TransmissionType {
+  MANUAL
+  AUTOMATICA
+}
+
+model Vehicle {
+  id           String   @id @default(cuid())
+  dealershipId String
+  dealership   Dealership @relation(fields: [dealershipId], references: [id], onDelete: Cascade)
+
+  patente   String @unique // license plate, primary lookup key for auto-verification
+  vin       String?
+
+  brand       String
+  model       String
+  version     String?
+  year        Int
+  mileageKm   Int
+  priceArs    Decimal          @db.Decimal(14, 2)
+  fuelType    FuelType
+  transmission TransmissionType
+  color       String?
+  description String?
+
+  city     String?
+  province String?
+
+  status      VehicleStatus @default(DRAFT)
+  publishedAt DateTime?
+
+  photos        VehiclePhoto[]
+  verifications VehicleVerification[]
+  savedBy       SavedListing[]
+  swipeActions  SwipeAction[]
+  invoices      Invoice[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([dealershipId])
+  @@index([status])
+  @@index([brand, model])
+  @@index([priceArs])
+}
+
+model VehiclePhoto {
+  id        String  @id @default(cuid())
+  vehicleId String
+  vehicle   Vehicle @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+
+  url      String
+  order    Int     @default(0)
+  isCover  Boolean @default(false)
+
+  createdAt DateTime @default(now())
+
+  @@index([vehicleId])
+}
+
+// ---------------------------------------------------------------------------
+// Legal-document auto-verification (the platform's core trust mechanism)
+// ---------------------------------------------------------------------------
+
+enum VerificationDocType {
+  FORMULARIO_08      // transfer form, signed status
+  TITULO_PROPIEDAD   // título de propiedad automotor
+  TARJETA_VERDE      // green card / cédula
+  LIBRE_DEUDA        // infracciones y patentes al día
+  INFORME_DOMINIO    // domain/lien/ownership report
+}
+
+enum VerificationStatus {
+  PENDING
+  IN_PROGRESS
+  VERIFIED
+  FAILED
+  EXPIRED
+}
+
+model VehicleVerification {
+  id        String  @id @default(cuid())
+  vehicleId String
+  vehicle   Vehicle @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+
+  docType VerificationDocType
+  status  VerificationStatus  @default(PENDING)
+
+  provider     String?  // e.g. "DNRPA", "AFIP", "Rentas Provinciales"
+  externalRef  String?  // ticket/reference id from the provider integration
+  resultPayload Json?   // raw normalized response, for audit/debugging
+
+  verifiedAt DateTime?
+  expiresAt  DateTime? // e.g. libre de deuda has a validity window
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([vehicleId, docType])
+  @@index([status])
+}
+
+// ---------------------------------------------------------------------------
+// Buyer discovery
+// ---------------------------------------------------------------------------
+
+enum SwipeActionType {
+  SAVE
+  PASS
+}
+
+model SwipeAction {
+  id        String          @id @default(cuid())
+  userId    String
+  user      User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  vehicleId String
+  vehicle   Vehicle         @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  action    SwipeActionType
+  createdAt DateTime        @default(now())
+
+  @@unique([userId, vehicleId])
+  @@index([userId])
+}
+
+model SavedListing {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  vehicleId String
+  vehicle   Vehicle  @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, vehicleId])
+  @@index([userId])
+}
+
+// ---------------------------------------------------------------------------
+// Billing: subscriptions, invoicing, AFIP electronic invoicing
+// ---------------------------------------------------------------------------
+
+enum SubscriptionPlan {
+  FREE
+  BASIC
+  PRO
+  ENTERPRISE
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  PAST_DUE
+  CANCELED
+  TRIALING
+}
+
+enum PaymentProvider {
+  MERCADO_PAGO
+  STRIPE
+}
+
+model Subscription {
+  id           String             @id @default(cuid())
+  dealershipId String             @unique
+  dealership   Dealership         @relation(fields: [dealershipId], references: [id], onDelete: Cascade)
+
+  plan   SubscriptionPlan   @default(FREE)
+  status SubscriptionStatus @default(ACTIVE)
+
+  provider         PaymentProvider?
+  externalId       String? // subscription/customer id at the gateway
+  listingsQuota    Int             @default(3)
+  currentPeriodEnd DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum InvoiceType {
+  FACTURA_A
+  FACTURA_B
+  FACTURA_C
+}
+
+enum InvoiceStatus {
+  PENDING
+  ISSUED
+  FAILED
+  CANCELED
+}
+
+model Invoice {
+  id           String     @id @default(cuid())
+  dealershipId String
+  dealership   Dealership @relation(fields: [dealershipId], references: [id], onDelete: Cascade)
+  vehicleId    String?
+  vehicle      Vehicle?   @relation(fields: [vehicleId], references: [id])
+
+  type     InvoiceType
+  provider PaymentProvider
+  status   InvoiceStatus @default(PENDING)
+
+  amountArs Decimal @db.Decimal(14, 2)
+  afipCae   String? // Código de Autorización Electrónico once issued
+  pdfUrl    String?
+
+  issuedAt  DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([dealershipId])
+}
+
+// ---------------------------------------------------------------------------
+// Fraud prevention & audit trail
+// ---------------------------------------------------------------------------
+
+model AuditLog {
+  id           String      @id @default(cuid())
+  actorUserId  String?
+  actor        User?       @relation(fields: [actorUserId], references: [id])
+  dealershipId String?
+  dealership   Dealership? @relation(fields: [dealershipId], references: [id])
+
+  action     String // e.g. "dealership.status_changed", "vehicle.published"
+  entityType String // e.g. "Vehicle", "Dealership", "VehicleVerification"
+  entityId   String
+  metadata   Json?
+  ipAddress  String?
+
+  createdAt DateTime @default(now())
+
+  @@index([dealershipId])
+  @@index([entityType, entityId])
+}
