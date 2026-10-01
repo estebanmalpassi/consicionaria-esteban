@@ -119,11 +119,28 @@ export async function borrarVehiculoAction(vehicleId: string): Promise<ActionRes
   if (!ctx) return { ok: false, error: "Tu sesión expiró." };
   const v = await prisma.vehicle.findFirst({
     where: { id: vehicleId, dealershipId: ctx.dealership.id },
-    include: { _count: { select: { sales: true } } },
+    include: { sales: { select: { id: true, status: true } } },
   });
   if (!v) return { ok: false, error: "No encontramos ese vehículo." };
-  if (v._count.sales > 0) return { ok: false, error: "Este auto tiene operaciones cargadas; no se puede borrar." };
-  await prisma.vehicle.delete({ where: { id: vehicleId } });
+  // Una venta activa protege al auto; las anuladas (por ejemplo, de prueba) se
+  // borran junto con él, con sus recibos.
+  if (v.sales.some((s) => s.status !== "ANULADA")) {
+    return { ok: false, error: "Este auto tiene una venta activa. Primero anulá la operación." };
+  }
+  await prisma.$transaction([
+    prisma.sale.deleteMany({ where: { vehicleId, status: "ANULADA" } }),
+    prisma.vehicle.delete({ where: { id: vehicleId } }),
+    prisma.auditLog.create({
+      data: {
+        actorUserId: ctx.user.id,
+        dealershipId: ctx.dealership.id,
+        action: "vehicle.deleted",
+        entityType: "Vehicle",
+        entityId: vehicleId,
+        metadata: { patente: v.patente, ventasAnuladasBorradas: v.sales.length },
+      },
+    }),
+  ]);
   revalidatePath("/dealer", "layout");
   return { ok: true };
 }
