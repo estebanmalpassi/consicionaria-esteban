@@ -45,7 +45,7 @@ export default async function ImprimirPage({ params, searchParams }: PageProps<"
         </div>
       </div>
 
-      <div className="documentos mx-auto grid max-w-5xl gap-8 px-2 py-8 print:block print:p-0">
+      <div className="documentos mx-auto grid max-w-5xl grid-cols-1 gap-8 overflow-x-auto px-2 py-8 print:block print:overflow-visible print:p-0">
         {(todos || doc === "boleto") && <Boleto op={op} />}
         {(todos || doc === "boleto") && <Boleto op={op} />}
         {(todos || doc === "recibo") && reciboId && <Recibo op={op} reciboId={reciboId} />}

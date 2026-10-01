@@ -172,8 +172,8 @@ export function AsistenteOperacion({
   };
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[1fr_380px] lg:items-start">
-      <div className="grid gap-6">
+    <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_380px] lg:items-start">
+      <div className="grid min-w-0 grid-cols-1 gap-6">
         {/* Progreso */}
         <ol className="grid grid-cols-4 gap-2">
           {PASOS.map((p, i) => {
@@ -207,11 +207,11 @@ export function AsistenteOperacion({
         <AnimatePresence mode="wait">
           <motion.div
             key={paso}
-            initial={{ opacity: 0, x: 16 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -16 }}
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
             transition={{ duration: 0.18 }}
-            className="bg-card grid gap-5 rounded-2xl border p-4 shadow-sm sm:p-6"
+            className="bg-card grid min-w-0 grid-cols-1 gap-5 rounded-2xl border p-4 shadow-sm sm:p-6"
           >
             {paso === 0 && (
               <>
@@ -224,7 +224,7 @@ export function AsistenteOperacion({
                         key={a.id}
                         onClick={() => elegirAuto(a)}
                         className={cn(
-                          "flex items-center gap-3 rounded-xl border p-2 text-left transition",
+                          "flex w-full min-w-0 items-center gap-3 rounded-xl border p-2 text-left transition",
                           vehicleId === a.id ? "border-primary ring-primary/20 bg-primary/5 ring-4" : "hover:bg-accent"
                         )}
                       >
@@ -242,7 +242,7 @@ export function AsistenteOperacion({
                             <span className="font-mono">{a.patente}</span> · {a.year} · {formatKm(a.mileageKm)}
                           </p>
                         </div>
-                        <span className="text-sm font-semibold tabular-nums">{formatArs(a.priceArs)}</span>
+                        <span className="shrink-0 text-sm font-semibold tabular-nums">{formatArs(a.priceArs)}</span>
                       </button>
                     ))}
                     <Button type="button" variant="outline" className="h-12" onClick={() => setCargandoNuevo(true)}>
