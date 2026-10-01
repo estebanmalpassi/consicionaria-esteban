@@ -8,7 +8,7 @@ export async function SiteHeader() {
   const session = await auth();
 
   return (
-    <header className="border-b">
+    <header className="border-b print:hidden">
       <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-6">
         <Link href="/" className="flex items-center gap-2 font-semibold">
           <ShieldCheck className="text-trust size-5" />
@@ -20,7 +20,7 @@ export async function SiteHeader() {
             <>
               {(session.user.role === "DEALER_OWNER" || session.user.role === "DEALER_STAFF") && (
                 <Button variant="ghost" size="sm" asChild>
-                  <Link href="/dealer">Mi concesionaria</Link>
+                  <Link href="/dealer">Panel</Link>
                 </Button>
               )}
               <span className="text-muted-foreground hidden sm:inline">

@@ -147,3 +147,21 @@
     font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
   }
 }
+
+/* Impresión de boletos, recibos y facturas: una hoja A4 por documento. */
+@media print {
+  @page {
+    size: A4;
+    margin: 14mm;
+  }
+  html,
+  body {
+    background: white !important;
+  }
+  .hoja {
+    break-after: page;
+  }
+  .hoja:last-child {
+    break-after: auto;
+  }
+}

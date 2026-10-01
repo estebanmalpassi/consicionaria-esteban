@@ -74,6 +74,16 @@ prisma/
   migrations/                Migración inicial aplicada contra Postgres
 ```
 
+### Panel de gestión de ventas (`/dealer`)
+
+- `operaciones/nueva` — asistente de venta (auto → vendedor → comprador → pago) con vista previa del boleto.
+- `operaciones/[id]` — carpeta: recibos numerados, datos de factura (CAE), entrega y checklist de trámites.
+- `operaciones/[id]/imprimir?doc=boleto|recibo|factura|f08|entrega|todo` — documentos A4 listos para imprimir o guardar en PDF.
+- `stock`, `stock/nuevo`, `stock/[id]` — inventario con fotos comprimidas en el navegador y guardadas en Postgres (`/api/vehiculos/[id]/fotos`, `/api/fotos/[id]`).
+- `ajustes` — punto de venta, IIBB e inicio de actividades para la factura.
+
+Lógica de negocio pura en `src/lib/sales/` (letra de factura, IVA, montos en letras, pasos de la transferencia).
+
 ### Rutas pendientes de implementar (fuera del alcance de este pase)
 
 - `(dealer)/listings/new` — alta minimalista: fotos + patente → dispara verificación.
