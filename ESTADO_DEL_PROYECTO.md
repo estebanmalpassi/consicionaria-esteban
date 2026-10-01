@@ -15,8 +15,8 @@ La marca (nombre, eslogan, logo) está en `src/lib/marca.ts` y los logos en
 App interna y sencilla para que el administrador de la concesionaria haga
 **los papeles de una venta de auto**. Carga los datos del comprador, del
 vendedor y del auto, y la app genera el boleto de compraventa, los recibos,
-la factura, la hoja de datos del Formulario 08 y el acta de entrega, listos
-para imprimir. También lleva el stock de autos con fotos.
+la hoja de datos del Formulario 08 y el acta de entrega, listos para
+imprimir. También lleva el stock de autos con fotos.
 
 Pedido original de Esteban (audio, septiembre 2026): "no hacer nada como una
 concesionaria grande, sino solamente la generación del contrato de
