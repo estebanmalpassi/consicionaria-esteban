@@ -37,7 +37,14 @@ también le quede un recibo cuando le pagan".
 
 ## Cómo funciona
 
-1. `/` redirige al panel (o a `/login` si no hay sesión).
+1. `/` es la **portada pública para clientes**: logo, "Más de 25 años de
+   trayectoria", servicios, historia, video vertical, autos disponibles
+   (los del stock con fotos y sin vender, sin precio: botón "Consultar" a
+   WhatsApp), ubicación y WhatsApp flotante. "Acceso equipo" lleva al login.
+   - **Video**: `public/video/inicio.mp4` + `inicio.webm` + `inicio.jpg`
+     (poster). Hoy es un video de muestra armado con posteos de Instagram;
+     para cambiarlo se reemplazan esos 3 archivos (mismo nombre).
+   - Textos, WhatsApp, Instagram y dirección en `src/lib/marca.ts`.
 2. `/register` crea la cuenta de la concesionaria → `/dealer/onboarding`
    pide los datos que salen impresos (razón social, CUIT, IVA, domicilio).
 3. Panel `/dealer` (barra inferior tipo app en el celular):

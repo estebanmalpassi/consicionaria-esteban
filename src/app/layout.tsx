@@ -5,7 +5,6 @@ import "./globals.css";
 import { MARCA } from "@/lib/marca";
 
 import { AuthProvider } from "@/components/providers/auth-provider";
-import { SiteHeader } from "@/components/layout/site-header";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -27,7 +26,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: MARCA.nombre,
   description:
-    "Gestión de ventas para concesionarias: boleto de compraventa, recibos, factura y stock con fotos.",
+    "Usados seleccionados, 0 km de diversas marcas y servicios de gestoría en Berrotarán, Córdoba. Más de 25 años de trayectoria.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
@@ -38,7 +37,6 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     >
       <body className="min-h-full flex flex-col">
         <AuthProvider>
-          <SiteHeader />
           <main className="flex flex-1 flex-col">{children}</main>
         </AuthProvider>
       </body>

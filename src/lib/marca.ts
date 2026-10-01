@@ -12,4 +12,22 @@ export const MARCA = {
   logoEscudo: "/marca/logo-escudo.png",
   /** Escudo dentro del círculo azul (encabezado, posteos). */
   logoCirculo: "/marca/logo-circulo.png",
+
+  // --- Portada pública ---------------------------------------------------
+  /** Link de WhatsApp de la bio de Instagram. */
+  whatsapp: "https://wa.link/a5szpx",
+  instagramUrl: "https://www.instagram.com/automotores_cartuccia/",
+  direccion: "Fray Mamerto Esquiú 57, Berrotarán, Córdoba",
+  referencia: "Frente a la plaza principal",
+  mapsUrl: "https://www.google.com/maps/search/?api=1&query=Fray+Mamerto+Esqui%C3%BA+57%2C+Berrotar%C3%A1n%2C+C%C3%B3rdoba",
+  /** Video vertical de la portada (reemplazar los archivos para cambiarlo). */
+  videoFuentes: [
+    { src: "/video/inicio.webm", type: "video/webm" },
+    { src: "/video/inicio.mp4", type: "video/mp4" },
+  ],
+  videoPoster: "/video/inicio.jpg",
+  historia: [
+    "Comenzó hace más de 25 años de la mano de Osvaldo Cartuccia.",
+    "En 2018, Javier Cartuccia se unió al equipo para dirigir y desarrollar juntos la agencia.",
+  ],
 } as const;

@@ -29,7 +29,7 @@ las imágenes para Instagram con el diseño de la agencia.
 ```
 src/
   app/
-    page.tsx                         Redirige al panel (o a /login)
+    page.tsx                         Portada pública para clientes (info, video, autos, WhatsApp)
     (auth)/login, (auth)/register    Acceso de la concesionaria
     dealer/
       onboarding/page.tsx            Datos de la concesionaria que salen en los papeles

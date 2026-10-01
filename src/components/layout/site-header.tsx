@@ -6,13 +6,12 @@ import { Button } from "@/components/ui/button";
 
 export async function SiteHeader() {
   const session = await auth();
-  // Sin sesión solo existen login y registro, que ya muestran la marca a pantalla completa.
   if (!session?.user) return null;
 
   return (
     <header className="border-b print:hidden">
       <div className="mx-auto flex h-14 max-w-6xl items-center justify-between gap-3 px-4 sm:px-6">
-        <Link href="/" className="flex min-w-0 items-center gap-2.5">
+        <Link href="/dealer" className="flex min-w-0 items-center gap-2.5">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={MARCA.logoCirculo} alt="" className="size-9 shrink-0 rounded-full" />
           <span className="truncate font-[family-name:var(--font-marca)] text-sm leading-tight font-extrabold tracking-wide uppercase">
