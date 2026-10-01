@@ -45,8 +45,9 @@ también le quede un recibo cuando le pagan".
      (poster). Hoy es un video de muestra armado con posteos de Instagram;
      para cambiarlo se reemplazan esos 3 archivos (mismo nombre).
    - Textos, WhatsApp, Instagram y dirección en `src/lib/marca.ts`.
-2. **Acceso solo con código de invitación** (variable `CODIGO_INVITACION` en
-   Vercel; sin ella el registro está cerrado).
+2. **Acceso solo con código** (variables `CODIGO_INVITACION` para empleados y
+   `CODIGO_DUENO` para el dueño, en Vercel; sin ninguna, el registro está
+   cerrado).
    - La **primera** cuenta que se registra es la dueña: carga los datos de la
      agencia en `/dealer/onboarding`. Las siguientes entran como **empleados**
      del mismo panel.
@@ -55,9 +56,14 @@ también le quede un recibo cuando le pagan".
      y sus autos no salen en la portada.
    - En **Ajustes → Equipo** el dueño ve quién tiene acceso, puede **quitar
      acceso** y **hacer dueño** a otro (el anterior queda como empleado).
-   - Plan acordado: el desarrollador (Mauri) se registra primero y prueba;
-     después Javier se registra con el código y Mauri le pasa la propiedad
-     con "Hacer dueño".
+   - **Código de dueño** (`CODIGO_DUENO`, un solo uso): quien se registra con
+     él queda como dueño de la agencia y el dueño anterior pasa a empleado.
+     Después de usarse queda anulado (se registra en `AuditLog` como
+     `dealership.owner_claimed`). El código se pide solo al registrarse.
+   - Plan acordado: el desarrollador (Mauri) se registró primero y probó; el
+     dueño real se registra con el código de dueño y toma el control. Mauri
+     queda como empleado para mantenimiento (el dueño puede quitarle el
+     acceso; el control técnico sigue por GitHub/Vercel/Neon).
 3. Panel `/dealer` (barra inferior tipo app en el celular):
    - `operaciones/nueva` — asistente de 4 pasos (auto → vendedor →
      comprador → pago) con vista previa del boleto en vivo. Autocompleta

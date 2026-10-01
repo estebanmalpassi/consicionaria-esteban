@@ -5,7 +5,7 @@ import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { signIn } from "@/lib/auth";
 import { registerSchema } from "@/lib/validations/auth";
-import { codigoInvitacionValido, getAgencia } from "@/lib/dealer";
+import { codigoDuenoValido, codigoDuenoYaUsado, codigoInvitacionValido, getAgencia } from "@/lib/dealer";
 
 export interface RegisterActionResult {
   ok: boolean;
@@ -24,12 +24,18 @@ export async function registerAction(
   const { name, email, password, codigo } = parsed.data;
   const normalizedEmail = email.toLowerCase();
 
-  // Solo la gente de la agencia puede crear cuenta: hace falta el código de invitación.
-  if (!process.env.CODIGO_INVITACION?.trim()) {
+  // Solo la gente de la agencia puede crear cuenta. Hay dos códigos:
+  // - CODIGO_DUENO (un solo uso): quien lo usa queda como dueño de la agencia.
+  // - CODIGO_INVITACION: empleados.
+  if (!process.env.CODIGO_INVITACION?.trim() && !process.env.CODIGO_DUENO?.trim()) {
     return { ok: false, error: "El registro está cerrado. Pedile acceso a la agencia." };
   }
-  if (!codigoInvitacionValido(codigo)) {
-    return { ok: false, error: "El código de invitación no es correcto." };
+  const esDueno = codigoDuenoValido(codigo);
+  if (esDueno && (await codigoDuenoYaUsado())) {
+    return { ok: false, error: "Ese código de dueño ya fue usado. Pedile un código de invitación a la agencia." };
+  }
+  if (!esDueno && !codigoInvitacionValido(codigo)) {
+    return { ok: false, error: "El código no es correcto." };
   }
 
   const existing = await prisma.user.findUnique({ where: { email: normalizedEmail } });
@@ -39,23 +45,41 @@ export async function registerAction(
 
   const passwordHash = await bcrypt.hash(password, 12);
 
-  // La primera cuenta es la dueña y después carga los datos de la agencia;
-  // las siguientes entran como empleados de esa misma agencia.
+  // Sin agencia todavía: la primera cuenta es la dueña y después carga los datos.
+  // Con agencia: el código de dueño le pasa el control (el dueño anterior queda
+  // como empleado); el de invitación entra como empleado.
   const agencia = await getAgencia();
-  const user = await prisma.user.create({
-    data: {
-      name,
-      email: normalizedEmail,
-      passwordHash,
-      role: agencia ? "DEALER_STAFF" : "DEALER_OWNER",
-      dealershipId: agencia?.id ?? null,
-    },
-  });
-  if (agencia) {
-    await prisma.auditLog.create({
-      data: { actorUserId: user.id, dealershipId: agencia.id, action: "user.joined", entityType: "User", entityId: user.id },
+  await prisma.$transaction(async (tx) => {
+    const nuevo = await tx.user.create({
+      data: {
+        name,
+        email: normalizedEmail,
+        passwordHash,
+        role: !agencia || esDueno ? "DEALER_OWNER" : "DEALER_STAFF",
+        dealershipId: agencia?.id ?? null,
+      },
     });
-  }
+    if (agencia && esDueno) {
+      await tx.user.update({ where: { id: agencia.ownerId }, data: { role: "DEALER_STAFF", dealershipId: agencia.id } });
+      await tx.dealership.update({ where: { id: agencia.id }, data: { ownerId: nuevo.id } });
+    }
+    if (esDueno) {
+      await tx.auditLog.create({
+        data: {
+          actorUserId: nuevo.id,
+          dealershipId: agencia?.id ?? null,
+          action: "dealership.owner_claimed",
+          entityType: "User",
+          entityId: nuevo.id,
+          metadata: agencia ? { dueñoAnterior: agencia.ownerId } : undefined,
+        },
+      });
+    } else if (agencia) {
+      await tx.auditLog.create({
+        data: { actorUserId: nuevo.id, dealershipId: agencia.id, action: "user.joined", entityType: "User", entityId: nuevo.id },
+      });
+    }
+  });
 
   try {
     await signIn("credentials", { email: normalizedEmail, password, redirect: false });

@@ -15,13 +15,28 @@ export async function getAgencia() {
   return prisma.dealership.findFirst({ orderBy: { createdAt: "asc" } });
 }
 
-/** Compara el código de invitación sin filtrar información por el tiempo de respuesta. */
-export function codigoInvitacionValido(codigo: string) {
-  const esperado = process.env.CODIGO_INVITACION?.trim();
-  if (!esperado) return false;
+/** Compara un código sin filtrar información por el tiempo de respuesta. */
+function coincide(codigo: string, esperado: string | undefined) {
+  const e = esperado?.trim();
+  if (!e) return false;
   const a = Buffer.from(codigo.trim());
-  const b = Buffer.from(esperado);
+  const b = Buffer.from(e);
   return a.length === b.length && timingSafeEqual(a, b);
+}
+
+/** Código para que el equipo se registre como empleados. */
+export function codigoInvitacionValido(codigo: string) {
+  return coincide(codigo, process.env.CODIGO_INVITACION);
+}
+
+/** Código de un solo uso para que el dueño real de la agencia tome el control. */
+export function codigoDuenoValido(codigo: string) {
+  return coincide(codigo, process.env.CODIGO_DUENO);
+}
+
+/** El código de dueño se puede usar una sola vez: queda registrado en la auditoría. */
+export async function codigoDuenoYaUsado() {
+  return (await prisma.auditLog.count({ where: { action: "dealership.owner_claimed" } })) > 0;
 }
 
 type Acceso =

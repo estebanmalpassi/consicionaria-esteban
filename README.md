@@ -70,7 +70,8 @@ prisma/
   (sin cuestiones fiscales). Los campos de factura del schema quedan sin uso.
 - **Vendedor particular**: una operación puede ser de la concesionaria o de un
   particular (consignación).
-- **Acceso**: registro solo con `CODIGO_INVITACION`. Una sola agencia
+- **Acceso**: registro solo con código: `CODIGO_INVITACION` (empleados) o
+  `CODIGO_DUENO` (un solo uso, toma la propiedad de la agencia). Una sola agencia
   (`getAgencia()` en `src/lib/dealer.ts`): la primera cuenta es la dueña, las
   demás entran como empleados; el dueño puede quitar acceso o pasar la
   propiedad desde Ajustes. El acceso se valida contra la base en cada pedido,
