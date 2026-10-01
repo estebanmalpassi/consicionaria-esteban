@@ -69,10 +69,11 @@ deployando online:
   `consicionaria-esteban` desde GitHub.
 - **Environment variables a cargar en Vercel** (antes de darle a Deploy):
   - `DATABASE_URL` = la connection string de Neon (con la contraseña real)
-  - `AUTH_SECRET` = `GxybmpDGQNNw+nDjB0vclkfR7fnKQTV3glrnXLMNQVw=`
-    (generado para este proyecto; si se pierde, se puede regenerar con
+  - `AUTH_SECRET` = una clave aleatoria. **Nunca escribirla en el repo**:
+    se guarda solo en Vercel (Settings → Environment Variables). Para
+    generar una nueva:
     `node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"`
-    pero esta app puede correr en cualquier máquina con Node)
+    o en https://generate-secret.vercel.app/32
 - **Build Command a overridear en Vercel**: `npx prisma migrate deploy && next build`
   (corre las migraciones de Prisma contra Neon antes de buildear)
 
