@@ -9,7 +9,7 @@ import { ARGENTINE_PROVINCES, type DealershipOnboardingValues } from "@/lib/vali
 import { Button } from "@/components/ui/button";
 import { AvisoError, Campo, Entrada, Selector } from "@/components/dealer/campo";
 
-/** Datos de la concesionaria: son los que se imprimen en boletos, recibos y facturas. */
+/** Datos de la concesionaria: son los que se imprimen en el boleto y los recibos. */
 export function FormConcesionaria({ inicial }: { inicial?: Partial<DealershipOnboardingValues> }) {
   const router = useRouter();
   const [error, setError] = React.useState<string | null>(null);
@@ -33,6 +33,7 @@ export function FormConcesionaria({ inicial }: { inicial?: Partial<DealershipOnb
         router.refresh();
       }}
     >
+      <input type="hidden" name="afipConditionIva" value={d("afipConditionIva") || "RESPONSABLE_INSCRIPTO"} />
       <div className="grid gap-3 sm:grid-cols-2">
         <Campo label="Nombre comercial" htmlFor="tradeName" hint="Como te conocen los clientes.">
           <Entrada id="tradeName" name="tradeName" required defaultValue={d("tradeName")} placeholder="Cartuccia Automotores" />
@@ -42,13 +43,6 @@ export function FormConcesionaria({ inicial }: { inicial?: Partial<DealershipOnb
         </Campo>
         <Campo label="CUIT" htmlFor="cuit">
           <Entrada id="cuit" name="cuit" required inputMode="numeric" defaultValue={d("cuit")} placeholder="30-71234567-4" />
-        </Campo>
-        <Campo label="Condición frente al IVA" htmlFor="afipConditionIva" hint="Define si facturás A/B o C.">
-          <Selector id="afipConditionIva" name="afipConditionIva" defaultValue={d("afipConditionIva") || "RESPONSABLE_INSCRIPTO"}>
-            <option value="RESPONSABLE_INSCRIPTO">Responsable Inscripto</option>
-            <option value="MONOTRIBUTO">Monotributo</option>
-            <option value="EXENTO">Exento</option>
-          </Selector>
         </Campo>
       </div>
       <Campo label="Domicilio" htmlFor="addressStreet">

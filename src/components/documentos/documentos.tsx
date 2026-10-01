@@ -1,18 +1,8 @@
 import * as React from "react";
 
-import {
-  CONDICION_IVA_LABELS,
-  FORMA_PAGO_LABELS,
-  TIPO_FACTURA_CODIGO,
-  TIPO_FACTURA_LETRA,
-  desglosarIva,
-  numeroComprobante,
-  type CondicionIva,
-} from "@/lib/sales/comprobantes";
+import { FORMA_PAGO_LABELS, numeroRecibo } from "@/lib/sales/comprobantes";
 import { montoALetras } from "@/lib/sales/numero-a-letras";
-import { fechaContrato, fechaCorta, totalesOperacion, type OperacionCompleta } from "@/lib/sales/operacion";
-import { AFIP_CONDITION_LABELS } from "@/lib/validations/dealership";
-import { FUEL_LABELS, TRANSMISSION_LABELS } from "@/types/vehicle";
+import { MESES, fechaContrato, fechaCorta, totalesOperacion, type OperacionCompleta } from "@/lib/sales/operacion";
 import { formatArs, formatKm } from "@/lib/utils";
 import { MARCA } from "@/lib/marca";
 
@@ -106,8 +96,35 @@ function Firmas({ izquierda, derecha }: { izquierda: string; derecha: string }) 
 }
 
 /* ------------------------------------------------------------------------ */
-/* Boleto de compraventa                                                    */
+/* Boleto de compraventa (mismo formato y cláusulas que el formulario que     */
+/* usa la agencia, con los espacios en blanco ya completos)                  */
 /* ------------------------------------------------------------------------ */
+
+const GASTOS_A_CARGO = {
+  COMPRADOR: "el/los COMPRADOR/ES",
+  VENDEDOR: "el/los VENDEDOR/ES",
+  AMBOS: "ambas partes en partes iguales",
+} as const;
+
+/** Dato completado sobre la línea, como en el boleto en papel. */
+function Linea({ children, mono }: { children?: React.ReactNode; mono?: boolean }) {
+  return children ? (
+    <b className={`border-b border-dotted border-neutral-500 px-0.5 ${mono ? "font-mono" : ""}`}>{children}</b>
+  ) : (
+    <span className="text-neutral-400">______________</span>
+  );
+}
+
+function ParteBoleto({ p, rol }: { p: { nombre: string; doc: string; nacionalidad?: string | null; estadoCivil?: string | null; calle?: string | null; ciudad?: string | null; provincia?: string | null }; rol: string }) {
+  return (
+    <>
+      el/los señor/es <Linea>{p.nombre}</Linea>, doc. de ident. nº <Linea>{p.doc}</Linea>, de nacionalidad{" "}
+      <Linea>{p.nacionalidad}</Linea>, de estado civil <Linea>{p.estadoCivil}</Linea>, domiciliado/s en calle{" "}
+      <Linea>{p.calle}</Linea> de <Linea>{p.ciudad}</Linea>, Pcia. de <Linea>{p.provincia}</Linea>, en su carácter de{" "}
+      <b>{rol}</b>
+    </>
+  );
+}
 
 export function Boleto({ op }: { op: Op }) {
   const v = op.vehicle;
@@ -115,127 +132,137 @@ export function Boleto({ op }: { op: Op }) {
   const { precio, permuta } = totalesOperacion(op);
   const sena = Number(op.depositArs);
   const saldo = Math.max(precio - permuta - sena, 0);
-  const ciudad = d.addressCity ?? "__________";
-
-  const vendedor = op.seller ? (
-    <>
-      <b>{op.seller.fullName}</b>, {identificacion(op.seller)}
-      {op.seller.nationality ? `, de nacionalidad ${op.seller.nationality.toLowerCase()}` : ""}
-      {op.seller.maritalStatus ? `, estado civil ${op.seller.maritalStatus.toLowerCase()}` : ""}, con domicilio en{" "}
-      {domicilio(op.seller)}
-    </>
-  ) : (
-    <>
-      <b>{d.legalName}</b> ({d.tradeName}), CUIT {d.cuit}, con domicilio en{" "}
-      {domicilio({ address: d.addressStreet, city: d.addressCity, province: d.province })}
-    </>
-  );
-
+  const fecha = new Date(op.saleDate);
   const b = op.buyer;
+
+  const vendedor = op.seller
+    ? {
+        nombre: op.seller.fullName,
+        doc: `${op.seller.docType} ${op.seller.docNumber}`,
+        nacionalidad: op.seller.nationality,
+        estadoCivil: op.seller.maritalStatus,
+        calle: op.seller.address,
+        ciudad: op.seller.city,
+        provincia: op.seller.province,
+      }
+    : {
+        nombre: `${d.legalName} (${d.tradeName})`,
+        doc: `CUIT ${d.cuit}`,
+        nacionalidad: "argentina",
+        estadoCivil: "—",
+        calle: d.addressStreet,
+        ciudad: d.addressCity,
+        provincia: d.province,
+      };
+
+  const condiciones: string[] = [];
+  if (sena > 0) condiciones.push(`En este acto la suma de ${formatArs(sena)} (${montoALetras(sena).toLowerCase()}) en concepto de seña y a cuenta de precio.`);
+  if (permuta > 0)
+    condiciones.push(
+      `${formatArs(permuta)} mediante la entrega en parte de pago de ${op.tradeInDescription ?? "un automotor"}${op.tradeInPatente ? `, dominio ${op.tradeInPatente}` : ""}.`
+    );
+  if (saldo > 0)
+    condiciones.push(
+      `El saldo de ${formatArs(saldo)} (${montoALetras(saldo).toLowerCase()}) mediante ${FORMA_PAGO_LABELS[op.paymentMethod].toLowerCase()}${op.paymentNotes ? `: ${op.paymentNotes}` : ""}.`
+    );
+  if (condiciones.length === 0) condiciones.push(`Pago total en este acto mediante ${FORMA_PAGO_LABELS[op.paymentMethod].toLowerCase()}.`);
+
+  const gastos = GASTOS_A_CARGO[(op.transferCostsBy ?? "COMPRADOR") as keyof typeof GASTOS_A_CARGO] ?? GASTOS_A_CARGO.COMPRADOR;
+  const dias = op.transferDays ?? 10;
 
   return (
     <Hoja pie={<PieMarca op={op} />}>
-      <Membrete op={op} titulo="Boleto de compraventa" derecha={<p className="text-xs">Operación N° {op.number}</p>} />
-      <h1 className="mb-5 text-center text-base font-bold tracking-widest">BOLETO DE COMPRAVENTA DE AUTOMOTOR</h1>
+      <Membrete op={op} titulo="Boleto compraventa" derecha={<p className="text-xs">Operación N° {op.number}</p>} />
+      <h1 className="mb-4 text-center text-base font-bold tracking-widest print:mb-3">BOLETO COMPRAVENTA</h1>
 
-      <div className="space-y-3 text-justify print:space-y-2">
+      <div className="space-y-2.5 text-justify print:space-y-1.5">
         <p>
-          Entre {vendedor}, en adelante denominado <b>EL VENDEDOR</b>; y <b>{b.fullName}</b>, {identificacion(b)}
-          {b.nationality ? `, de nacionalidad ${b.nationality.toLowerCase()}` : ""}
-          {b.maritalStatus ? `, estado civil ${b.maritalStatus.toLowerCase()}` : ""}, con domicilio en {domicilio(b)}, en adelante
-          denominado <b>EL COMPRADOR</b>; convienen en celebrar el presente boleto de compraventa, sujeto a las siguientes cláusulas:
+          En <Linea>{d.addressCity}</Linea>, provincia de <Linea>{d.province}</Linea>, departamento <Linea>{MARCA.departamento}</Linea>, a
+          los <Linea>{fecha.getDate()}</Linea> días del mes de <Linea>{MESES[fecha.getMonth()]}</Linea> del año{" "}
+          <Linea>{fecha.getFullYear()}</Linea>, entre <ParteBoleto p={vendedor} rol="VENDEDOR/ES" /> por una parte, y{" "}
+          <ParteBoleto
+            p={{ nombre: b.fullName, doc: `${b.docType} ${b.docNumber}`, nacionalidad: b.nationality, estadoCivil: b.maritalStatus, calle: b.address, ciudad: b.city, provincia: b.province }}
+            rol="COMPRADOR/ES"
+          />{" "}
+          por la otra, convienen celebrar el presente boleto de COMPRA-VENTA que se regirá bajo las cláusulas que a continuación se
+          detallan:
         </p>
 
         <p>
-          <b>PRIMERA – Objeto:</b> EL VENDEDOR vende y EL COMPRADOR adquiere el automotor marca <b>{v.brand}</b>, modelo{" "}
-          <b>
+          <b>1º)</b> El/los señor/es <Linea>{vendedor.nombre}</Linea> Vende/n un/a <Linea>{v.bodyType ?? "automotor"}</Linea> Marca{" "}
+          <Linea>{v.brand}</Linea> Modelo{" "}
+          <Linea>
             {v.model}
-            {v.version ? ` ${v.version}` : ""}
-          </b>
-          , tipo {v.bodyType ?? "________"}, año <b>{v.year}</b>, dominio <b className="font-mono">{v.patente}</b>, motor N°{" "}
-          <b className="font-mono">{v.engineNumber ?? "______________"}</b>, chasis N° <b className="font-mono">{v.vin ?? "______________"}</b>,
-          color {v.color ?? "________"}, combustible {FUEL_LABELS[v.fuelType].toLowerCase()}, con {formatKm(v.mileageKm)} recorridos.
+            {v.version ? ` ${v.version}` : ""} {v.year}
+          </Linea>{" "}
+          Dominio del Registro Nacional del Automotor Nº <Linea mono>{v.patente}</Linea> dotado con motor Nº{" "}
+          <Linea mono>{v.engineNumber}</Linea> y Chasis Nº <Linea mono>{v.vin}</Linea> libre de todo gravamen y en el estado de uso y
+          conservación en que se encuentra previamente revisado por el comprador en la suma de pesos{" "}
+          <Linea>{montoALetras(precio).replace(/^PESOS /, "").toLowerCase()}</Linea> (<Linea>{formatArs(precio)}</Linea>) bajo las
+          condiciones de pago que se estipulan en el punto 2º) del presente Boleto de Compra-Venta.
         </p>
 
-        <p>
-          <b>SEGUNDA – Precio:</b> El precio total y convenido es de <b>{montoALetras(precio)}</b> (<b>{formatArs(precio)}</b>), que se abona de
-          la siguiente forma:
-        </p>
-        <ul className="ml-6 list-disc">
-          {sena > 0 && (
-            <li>
-              En este acto la suma de {formatArs(sena)} ({montoALetras(sena).toLowerCase()}) en concepto de seña y a cuenta de precio, sirviendo el
-              presente de suficiente recibo.
-            </li>
-          )}
-          {permuta > 0 && (
-            <li>
-              La suma de {formatArs(permuta)} mediante la entrega en parte de pago del automotor {op.tradeInDescription ?? ""}
-              {op.tradeInPatente ? `, dominio ${op.tradeInPatente}` : ""}, que EL COMPRADOR declara de su exclusiva propiedad y libre de
-              gravámenes, deudas e inhibiciones.
-            </li>
-          )}
-          {saldo > 0 && (
-            <li>
-              El saldo de {formatArs(saldo)} ({montoALetras(saldo).toLowerCase()}) mediante {FORMA_PAGO_LABELS[op.paymentMethod].toLowerCase()}
-              {op.paymentNotes ? `: ${op.paymentNotes}` : ""}, a abonar antes o en el momento de la entrega del vehículo.
-            </li>
-          )}
-          {sena === 0 && permuta === 0 && saldo === precio && op.paymentNotes && <li>{op.paymentNotes}</li>}
-        </ul>
-
-        <p>
-          <b>TERCERA – Estado dominial:</b> EL VENDEDOR declara que el automotor es de su propiedad o que se encuentra facultado para su venta,
-          y que se halla libre de prendas, embargos, inhibiciones y cualquier otro gravamen, haciéndose cargo de las deudas por patentes,
-          multas e infracciones devengadas hasta la fecha de entrega de la posesión.
-        </p>
-
-        <p>
-          <b>CUARTA – Estado del vehículo:</b> EL COMPRADOR declara haber revisado el automotor y recibirlo en el estado en que se encuentra,
-          que conoce y acepta, sin perjuicio de las garantías que por ley correspondan.
-        </p>
-
-        <p>
-          <b>QUINTA – Entrega y responsabilidad:</b> A partir de la entrega de la posesión, EL COMPRADOR asume la responsabilidad civil,
-          penal y administrativa por el uso del vehículo, así como el pago de patentes, seguros, multas e infracciones posteriores.
-        </p>
-
-        <p>
-          <b>SEXTA – Transferencia:</b> EL COMPRADOR se obliga a inscribir la transferencia a su nombre ante el Registro Nacional de la
-          Propiedad del Automotor dentro de los diez (10) días hábiles de la firma del Formulario 08, siendo los gastos de transferencia a
-          su exclusivo cargo. Vencido ese plazo, EL VENDEDOR queda facultado a efectuar la denuncia de venta correspondiente.
-        </p>
-
-        <p>
-          <b>SÉPTIMA – Incumplimiento:</b> Si EL COMPRADOR no abonara el saldo en las condiciones pactadas, perderá la seña entregada. Si
-          quien desistiera fuera EL VENDEDOR, deberá restituirla con más otro tanto, conforme al art. 1059 del Código Civil y Comercial.
-        </p>
-
-        {op.notes && (
+        <div>
           <p>
-            <b>OCTAVA – Cláusulas particulares:</b> {op.notes}
+            <b>2º) CONDICIONES DE PAGO:</b>
           </p>
-        )}
+          <ul className="ml-6 list-disc">
+            {condiciones.map((c) => (
+              <li key={c}>{c}</li>
+            ))}
+          </ul>
+        </div>
 
         <p>
-          <b>{op.notes ? "NOVENA" : "OCTAVA"} – Jurisdicción:</b> Para todos los efectos legales, las partes constituyen domicilio en los
-          indicados precedentemente y se someten a la jurisdicción de los tribunales ordinarios de {d.province ?? ciudad}, renunciando a
-          cualquier otro fuero.
+          <b>3º)</b> El/los comprador/es acepta/n de plena conformidad la unidad en cesión objeto del presente Boleto Compra-Venta y las
+          condiciones de pago establecidas, tomando plena posesión en este acto del vehículo y responsabilizándose en lo sucesivo de toda
+          acción civil, material o criminal que pudiera ocurrirle, estando detenido o en circulación, con relación a cosas o animales.
         </p>
 
         <p>
-          En prueba de conformidad, se firman dos (2) ejemplares de un mismo tenor y a un solo efecto, en la ciudad de {ciudad},{" "}
-          {fechaContrato(op.saleDate)}.
+          <b>4º)</b> Se deja establecido que el/los comprador/es deberán atender estrictamente las condiciones de pago fijadas en el punto
+          2º) del presente Boleto de Compra-Venta, por cuanto en caso de incurrir en mora en cualquiera de las fechas indicadas en este
+          boleto quedará &quot;ipso-facto&quot; rescindido, debiéndose reintegrar nuevamente la unidad al/los Vendedores quedando las sumas
+          entregadas hasta ese momento como un simple alquiler de la misma.
+        </p>
+
+        <p>
+          <b>5º)</b> Los gastos de transferencia ante el Registro Nac. del Automotor, Registro de Créditos Prendarios, Municipales, de
+          Gestoría, y todo lo que surja objeto de la referida transferencia traslativa de dominio serán soportados por{" "}
+          <Linea>{gastos}</Linea> quien se obliga a efectuarla dentro de los <Linea>{dias}</Linea> días, término dentro del cual el
+          Vendedor entrega la documentación del automotor vendido, pero una vez transcurrido dicho término el vendedor no se responsabiliza
+          por la negativa o reclamo que pudiere efectuar quien tiene inscripto el vehículo en el REGISTRO AUTOMOTOR, quedando autorizado
+          por el solo vencimiento a efectuar denuncia de venta en el REGISTRO pertinente.
+        </p>
+
+        <p>
+          <b>6º) OTRA:</b> {op.notes ? <Linea>{op.notes}</Linea> : <span className="text-neutral-400">—</span>}
+        </p>
+
+        <p>
+          En prueba de conformidad se firman <Linea>dos (2)</Linea> ejemplares del presente de un mismo tenor y a un solo efecto los
+          cuales obrarán en poder de las partes intervinientes en el lugar y fecha &quot;ut-supra&quot;.-
         </p>
       </div>
 
-      <Firmas izquierda="El vendedor" derecha="El comprador" />
+      <div className="mt-14 grid grid-cols-2 gap-16 text-center font-sans text-xs break-inside-avoid print:mt-10">
+        <div>
+          <div className="mb-1 border-t border-neutral-800" />
+          <p className="font-semibold">Firma de Comprador/es</p>
+          <p className="text-neutral-600">Doc. Nº {b.docNumber}</p>
+        </div>
+        <div>
+          <div className="mb-1 border-t border-neutral-800" />
+          <p className="font-semibold">Firma de Vendedor/es</p>
+          <p className="text-neutral-600">Doc. Nº {op.seller ? op.seller.docNumber : `CUIT ${d.cuit}`}</p>
+        </div>
+      </div>
     </Hoja>
   );
 }
 
 /* ------------------------------------------------------------------------ */
-/* Recibo (original + duplicado en la misma hoja)                            */
+/* Recibo simple con membrete (original + duplicado en la misma hoja)        */
 /* ------------------------------------------------------------------------ */
 
 export function Recibo({ op, reciboId }: { op: Op; reciboId: string }) {
@@ -244,7 +271,6 @@ export function Recibo({ op, reciboId }: { op: Op; reciboId: string }) {
   const v = op.vehicle;
   const acumulado = op.receipts.filter((x) => x.number <= r.number).reduce((a, x) => a + Number(x.amountArs), 0);
   const saldo = Math.max(Number(op.priceArs) - Number(op.tradeInValueArs ?? 0) - acumulado, 0);
-  const numero = numeroComprobante(op.dealership.pointOfSale, r.number);
 
   const cuerpo = (copia: string) => (
     <section className="flex flex-col break-inside-avoid">
@@ -253,26 +279,21 @@ export function Recibo({ op, reciboId }: { op: Op; reciboId: string }) {
         titulo="Recibo"
         derecha={
           <>
-            <p className="font-mono text-sm">N° {numero}</p>
+            <p className="font-mono text-sm">{numeroRecibo(r.number)}</p>
             <p className="text-xs">Fecha: {fechaCorta(r.date)}</p>
             <p className="mt-1 text-[10px] font-semibold tracking-widest text-neutral-500">{copia}</p>
           </>
         }
       />
-      <p className="text-justify">
-        Recibí de <b>{op.buyer.fullName}</b> ({identificacion(op.buyer)}) la suma de <b>{montoALetras(Number(r.amountArs))}</b>{" "}
+      <p className="text-justify text-[12pt] leading-loose print:text-[10.5pt]">
+        Recibí de <b>{op.buyer.fullName}</b> la suma de <b>{montoALetras(Number(r.amountArs)).toLowerCase()}</b>{" "}
         <span className="rounded border border-neutral-800 px-2 py-0.5 font-sans font-bold whitespace-nowrap">
           {formatArs(Number(r.amountArs))}
         </span>{" "}
-        en concepto de <b>{r.concept.toLowerCase()}</b> del automotor {descripcionAuto(v)}, año {v.year}, dominio{" "}
-        <b className="font-mono">{v.patente}</b>, abonado mediante {FORMA_PAGO_LABELS[r.method].toLowerCase()}.
+        en concepto de <b>{r.concept.toLowerCase()}</b> del {descripcionAuto(v)} {v.year}, dominio <b className="font-mono">{v.patente}</b>.
         {r.notes ? ` ${r.notes}.` : ""}
       </p>
-      <div className="mt-3 grid grid-cols-3 gap-2 font-sans text-xs">
-        <Dato k="Precio total" v={formatArs(Number(op.priceArs))} />
-        <Dato k="Pagado a la fecha" v={formatArs(acumulado + Number(op.tradeInValueArs ?? 0))} />
-        <Dato k="Saldo pendiente" v={formatArs(saldo)} fuerte />
-      </div>
+      {saldo > 0 && <p className="mt-2 font-sans text-sm">Saldo pendiente: <b>{formatArs(saldo)}</b></p>}
       <div className="mt-10 ml-auto w-64 text-center font-sans text-xs">
         <div className="mb-1 border-t border-neutral-800" />
         <p className="font-semibold">p/ {op.dealership.tradeName}</p>
@@ -287,171 +308,6 @@ export function Recibo({ op, reciboId }: { op: Op; reciboId: string }) {
       <div className="border-t-2 border-dashed border-neutral-300 text-center font-sans text-[10px] text-neutral-400">✂ cortar aquí</div>
       {cuerpo("DUPLICADO")}
     </Hoja>
-  );
-}
-
-function Dato({ k, v, fuerte }: { k: string; v: string; fuerte?: boolean }) {
-  return (
-    <div className="rounded border border-neutral-300 px-2 py-1">
-      <p className="text-[10px] text-neutral-500 uppercase">{k}</p>
-      <p className={fuerte ? "font-bold" : ""}>{v}</p>
-    </div>
-  );
-}
-
-/* ------------------------------------------------------------------------ */
-/* Factura (formato ARCA / ex AFIP)                                          */
-/* ------------------------------------------------------------------------ */
-
-export function Factura({ op }: { op: Op }) {
-  const d = op.dealership;
-  if (!op.invoiceType) {
-    return (
-      <Hoja pie={<PieMarca op={op} />}>
-        <Membrete op={op} titulo="Factura" />
-        <p>
-          En esta operación vende un particular ({op.seller?.fullName}). La venta entre particulares no lleva factura del auto: se instrumenta
-          con el boleto de compraventa y el Formulario 08. La concesionaria factura sólo su comisión por la intermediación.
-        </p>
-      </Hoja>
-    );
-  }
-  const letra = TIPO_FACTURA_LETRA[op.invoiceType];
-  const total = Number(op.priceArs);
-  const alicuota = Number(op.ivaRate);
-  const { neto, iva } = desglosarIva(total, letra === "C" ? 0 : alicuota);
-  const v = op.vehicle;
-  const pendiente = !op.afipCae;
-
-  return (
-    <Hoja className="relative overflow-hidden font-sans text-[10pt]" pie={<PieMarca op={op} />}>
-      {pendiente && (
-        <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-          <p className="-rotate-30 text-center text-4xl font-black tracking-widest text-red-500/15">
-            BORRADOR
-            <br />
-            SIN CAE
-          </p>
-        </div>
-      )}
-      <div className="grid grid-cols-[1fr_auto_1fr] border-2 border-neutral-800">
-        <div className="p-3">
-          <p className="text-lg font-bold">{d.tradeName}</p>
-          <p className="text-xs">
-            <b>Razón social:</b> {d.legalName}
-            <br />
-            <b>Domicilio:</b> {[d.addressStreet, d.addressCity, d.province].filter(Boolean).join(", ")}
-            <br />
-            <b>Condición IVA:</b> {AFIP_CONDITION_LABELS[d.afipConditionIva as keyof typeof AFIP_CONDITION_LABELS] ?? d.afipConditionIva}
-          </p>
-        </div>
-        <div className="flex flex-col items-center border-x-2 border-neutral-800 px-4 pt-1">
-          <span className="text-5xl font-black">{letra}</span>
-          <span className="text-[9px]">COD. {TIPO_FACTURA_CODIGO[op.invoiceType]}</span>
-        </div>
-        <div className="p-3 text-xs">
-          <p className="text-lg font-bold">FACTURA</p>
-          <p>
-            <b>Punto de venta / N°:</b> <span className="font-mono">{numeroComprobante(d.pointOfSale, op.invoiceNumber)}</span>
-            <br />
-            <b>Fecha de emisión:</b> {fechaCorta(op.saleDate)}
-            <br />
-            <b>CUIT:</b> {d.cuit}
-            <br />
-            <b>Ingresos Brutos:</b> {d.grossIncomeNumber ?? "—"}
-            <br />
-            <b>Inicio de actividades:</b> {d.activityStartDate ?? "—"}
-          </p>
-        </div>
-      </div>
-
-      <div className="mt-2 grid grid-cols-2 gap-x-4 border-2 border-neutral-800 p-3 text-xs">
-        <p>
-          <b>{op.buyer.docType}:</b> {op.buyer.docNumber}
-        </p>
-        <p>
-          <b>Apellido y nombre / Razón social:</b> {op.buyer.fullName}
-        </p>
-        <p>
-          <b>Condición frente al IVA:</b> {CONDICION_IVA_LABELS[op.buyer.ivaCondition as CondicionIva]}
-        </p>
-        <p>
-          <b>Domicilio:</b> {domicilio(op.buyer)}
-        </p>
-        <p>
-          <b>Condición de venta:</b> {FORMA_PAGO_LABELS[op.paymentMethod]}
-        </p>
-      </div>
-
-      <table className="mt-2 w-full border-2 border-neutral-800 text-xs">
-        <thead className="bg-neutral-100">
-          <tr className="text-left">
-            <th className="p-2">Descripción</th>
-            <th className="p-2 text-right">Cant.</th>
-            <th className="p-2 text-right">{letra === "A" ? "Precio neto" : "Precio"}</th>
-            {letra === "A" && <th className="p-2 text-right">IVA</th>}
-            <th className="p-2 text-right">Subtotal</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr className="align-top">
-            <td className="p-2">
-              Automotor {descripcionAuto(v)}, año {v.year}, dominio {v.patente}
-              <br />
-              <span className="text-neutral-600">
-                Motor {v.engineNumber ?? "—"} · Chasis {v.vin ?? "—"} · {TRANSMISSION_LABELS[v.transmission]} · {formatKm(v.mileageKm)}
-              </span>
-            </td>
-            <td className="p-2 text-right">1</td>
-            <td className="p-2 text-right tabular-nums">{formatArs(letra === "A" ? neto : total)}</td>
-            {letra === "A" && <td className="p-2 text-right">{alicuota}%</td>}
-            <td className="p-2 text-right tabular-nums">{formatArs(letra === "A" ? neto : total)}</td>
-          </tr>
-        </tbody>
-      </table>
-
-      <div className="mt-2 ml-auto w-72 border-2 border-neutral-800 p-3 text-sm">
-        {letra === "A" && (
-          <>
-            <Linea k="Importe neto gravado" v={formatArs(neto)} />
-            <Linea k={`IVA ${alicuota}%`} v={formatArs(iva)} />
-          </>
-        )}
-        <Linea k="Importe total" v={formatArs(total)} fuerte />
-        {letra === "B" && alicuota > 0 && (
-          <p className="mt-1 text-[10px] text-neutral-600">
-            Régimen de Transparencia Fiscal al Consumidor (Ley 27.743): IVA contenido {formatArs(iva)}
-          </p>
-        )}
-      </div>
-
-      <p className="mt-2 text-xs">Son: {montoALetras(total)}</p>
-
-      <div className="mt-4 flex items-end justify-between border-t-2 border-neutral-800 pt-2 text-xs">
-        <div>
-          <p>
-            <b>CAE N°:</b> <span className="font-mono">{op.afipCae ?? "____________________"}</span>
-          </p>
-          <p>
-            <b>Fecha de vto. de CAE:</b> {op.afipCaeExpiry ?? "__________"}
-          </p>
-        </div>
-        <p className="max-w-64 text-right text-[10px] text-neutral-500">
-          {pendiente
-            ? "Comprobante no válido hasta obtener el CAE en ARCA (ex AFIP) y cargarlo en la operación."
-            : "Comprobante autorizado por ARCA (ex AFIP)."}
-        </p>
-      </div>
-    </Hoja>
-  );
-}
-
-function Linea({ k, v, fuerte }: { k: string; v: string; fuerte?: boolean }) {
-  return (
-    <div className={`flex justify-between ${fuerte ? "border-t border-neutral-400 pt-1 font-bold" : ""}`}>
-      <span>{k}</span>
-      <span className="tabular-nums">{v}</span>
-    </div>
   );
 }
 

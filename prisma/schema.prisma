@@ -460,6 +460,10 @@ model Sale {
   deliveryDate DateTime?
   deliveryKm   Int?
 
+  // Cláusula 5ª del boleto: quién paga la transferencia y en cuántos días se hace
+  transferCostsBy String? // "COMPRADOR" | "VENDEDOR" | "AMBOS"
+  transferDays    Int?
+
   // Comprobante fiscal
   invoiceType   InvoiceType?
   ivaRate       Decimal      @default(21) @db.Decimal(5, 2)

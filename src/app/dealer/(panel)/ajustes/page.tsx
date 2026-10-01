@@ -1,8 +1,6 @@
 import Link from "next/link";
 
 import { requireDealer } from "@/lib/dealer";
-import { AFIP_CONDITION_LABELS } from "@/lib/validations/dealership";
-import { FormDatosFiscales } from "@/components/dealer/form-datos-fiscales";
 
 export default async function AjustesPage() {
   const { dealership: d } = await requireDealer();
@@ -16,7 +14,6 @@ export default async function AjustesPage() {
           <Dato k="Nombre comercial" v={d.tradeName} />
           <Dato k="Razón social" v={d.legalName} />
           <Dato k="CUIT" v={d.cuit} />
-          <Dato k="Condición IVA" v={AFIP_CONDITION_LABELS[d.afipConditionIva as keyof typeof AFIP_CONDITION_LABELS] ?? d.afipConditionIva ?? "—"} />
           <Dato k="Domicilio" v={[d.addressStreet, d.addressCity, d.province].filter(Boolean).join(", ")} />
           <Dato k="Teléfono" v={d.phone ?? "—"} />
         </dl>
@@ -25,13 +22,6 @@ export default async function AjustesPage() {
         </Link>
       </section>
 
-      <section className="bg-card grid gap-4 rounded-2xl border p-5">
-        <div>
-          <h2 className="font-semibold">Facturación</h2>
-          <p className="text-muted-foreground text-sm">Se imprimen en el encabezado de la factura y en la numeración de los recibos.</p>
-        </div>
-        <FormDatosFiscales inicial={{ pointOfSale: d.pointOfSale, grossIncomeNumber: d.grossIncomeNumber, activityStartDate: d.activityStartDate }} />
-      </section>
     </div>
   );
 }

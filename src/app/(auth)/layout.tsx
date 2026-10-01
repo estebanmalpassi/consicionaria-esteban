@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import { MARCA } from "@/lib/marca";
 
 /** Login y registro a pantalla completa con la estética de la marca (azul noche + dorado). */
@@ -11,6 +13,9 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
       <p className="relative font-[family-name:var(--font-marca)] text-xs tracking-[0.25em] text-[#d4ad55]/80 uppercase">
         {MARCA.eslogan}
       </p>
+      <Link href="/" className="relative text-sm text-white/60 hover:text-white">
+        ← Volver al inicio
+      </Link>
     </div>
   );
 }

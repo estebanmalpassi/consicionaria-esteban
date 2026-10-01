@@ -2,12 +2,11 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import { Check, ExternalLink, Loader2, Plus } from "lucide-react";
+import { Check, Loader2, Plus } from "lucide-react";
 
 import {
   agregarReciboAction,
   anularOperacionAction,
-  guardarFacturaAction,
   registrarEntregaAction,
   toggleTramiteAction,
 } from "@/lib/actions/operaciones";
@@ -138,71 +137,6 @@ export function NuevoRecibo({ saleId, saldo }: { saleId: string; saldo: number }
         <Button type="submit" className="flex-1" disabled={enviando || !monto}>
           {enviando && <Loader2 className="size-4 animate-spin" />} Guardar e imprimir recibo
         </Button>
-      </div>
-    </form>
-  );
-}
-
-export function FormFactura({
-  saleId,
-  invoiceNumber,
-  afipCae,
-  afipCaeExpiry,
-}: {
-  saleId: string;
-  invoiceNumber: number | null;
-  afipCae: string | null;
-  afipCaeExpiry: string | null;
-}) {
-  const router = useRouter();
-  const [estado, setEstado] = React.useState<"idle" | "guardando" | "ok">("idle");
-  const [error, setError] = React.useState<string | null>(null);
-  return (
-    <form
-      className="grid gap-3"
-      onSubmit={async (e) => {
-        e.preventDefault();
-        const fd = new FormData(e.currentTarget);
-        setEstado("guardando");
-        const res = await guardarFacturaAction({
-          saleId,
-          invoiceNumber: fd.get("invoiceNumber") ? Number(fd.get("invoiceNumber")) : undefined,
-          afipCae: String(fd.get("afipCae") ?? ""),
-          afipCaeExpiry: String(fd.get("afipCaeExpiry") ?? ""),
-        });
-        if (!res.ok) {
-          setEstado("idle");
-          return setError(res.error ?? "No se pudo guardar.");
-        }
-        setEstado("ok");
-        router.refresh();
-      }}
-    >
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-        <Campo label="N° de factura" htmlFor="f-num">
-          <Entrada id="f-num" name="invoiceNumber" inputMode="numeric" defaultValue={invoiceNumber ?? ""} placeholder="123" />
-        </Campo>
-        <Campo label="CAE" htmlFor="f-cae">
-          <Entrada id="f-cae" name="afipCae" inputMode="numeric" defaultValue={afipCae ?? ""} className="font-mono" placeholder="74123456789012" />
-        </Campo>
-        <Campo label="Vto. del CAE" htmlFor="f-vto" className="col-span-2 sm:col-span-1">
-          <Entrada id="f-vto" name="afipCaeExpiry" defaultValue={afipCaeExpiry ?? ""} placeholder="10/10/2026" />
-        </Campo>
-      </div>
-      <AvisoError>{error}</AvisoError>
-      <div className="flex flex-wrap items-center gap-2">
-        <Button type="submit" variant="outline" disabled={estado === "guardando"}>
-          {estado === "guardando" ? <Loader2 className="size-4 animate-spin" /> : estado === "ok" ? <Check className="size-4" /> : null}
-          {estado === "ok" ? "Guardado" : "Guardar datos de la factura"}
-        </Button>
-        <a
-          href="https://auth.afip.gob.ar/contribuyente_/login.xhtml"
-          target="_blank"
-          rel="noreferrer"
-          className="text-primary inline-flex items-center gap-1 text-sm hover:underline"
-        >
-          Abrir ARCA (Comprobantes en línea) <ExternalLink className="size-3.5" />
-        </a>
       </div>
     </form>
   );

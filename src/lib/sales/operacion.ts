@@ -25,7 +25,7 @@ export function totalesOperacion(op: Pick<OperacionCompleta, "priceArs" | "trade
   return { precio, permuta, cobrado, saldo };
 }
 
-const MESES = [
+export const MESES = [
   "enero", "febrero", "marzo", "abril", "mayo", "junio",
   "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre",
 ];

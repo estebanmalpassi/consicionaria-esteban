@@ -14,7 +14,7 @@ export interface OnboardingActionResult {
   error?: string;
 }
 
-/** Crea o actualiza los datos de la concesionaria que salen en boletos, recibos y facturas. */
+/** Crea o actualiza los datos de la concesionaria que salen en el boleto y los recibos. */
 export async function submitOnboardingAction(
   raw: DealershipOnboardingValues
 ): Promise<OnboardingActionResult> {

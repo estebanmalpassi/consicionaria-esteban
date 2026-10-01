@@ -98,14 +98,6 @@ export function CamposPersona({
       </Campo>
 
       <div className="grid grid-cols-2 gap-3">
-        <Campo label="Condición frente al IVA" htmlFor={id("ivaCondition")} className="col-span-2 sm:col-span-1">
-          <Selector id={id("ivaCondition")} value={valor.ivaCondition} onChange={set("ivaCondition")}>
-            <option value="CONSUMIDOR_FINAL">Consumidor final</option>
-            <option value="RESPONSABLE_INSCRIPTO">Responsable inscripto</option>
-            <option value="MONOTRIBUTO">Monotributista</option>
-            <option value="EXENTO">Exento</option>
-          </Selector>
-        </Campo>
         <Campo label="Estado civil" htmlFor={id("maritalStatus")}>
           <Selector id={id("maritalStatus")} value={valor.maritalStatus} onChange={set("maritalStatus")}>
             <option value="">—</option>

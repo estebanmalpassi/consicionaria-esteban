@@ -7,7 +7,7 @@ import { DOCUMENTOS } from "@/lib/sales/comprobantes";
 import { obtenerOperacion } from "@/lib/sales/operacion";
 import { cn } from "@/lib/utils";
 import { BotonImprimir } from "@/components/dealer/boton-imprimir";
-import { ActaEntrega, Boleto, DatosF08, Factura, Recibo } from "@/components/documentos/documentos";
+import { ActaEntrega, Boleto, DatosF08, Recibo } from "@/components/documentos/documentos";
 
 export default async function ImprimirPage({ params, searchParams }: PageProps<"/dealer/operaciones/[id]/imprimir">) {
   const { id } = await params;
@@ -49,7 +49,6 @@ export default async function ImprimirPage({ params, searchParams }: PageProps<"
         {(todos || doc === "boleto") && <Boleto op={op} />}
         {(todos || doc === "boleto") && <Boleto op={op} />}
         {(todos || doc === "recibo") && reciboId && <Recibo op={op} reciboId={reciboId} />}
-        {(todos || doc === "factura") && <Factura op={op} />}
         {(todos || doc === "f08") && <DatosF08 op={op} />}
         {(todos || doc === "entrega") && <ActaEntrega op={op} />}
       </div>

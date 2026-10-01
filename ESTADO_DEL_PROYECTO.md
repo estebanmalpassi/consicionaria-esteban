@@ -15,8 +15,8 @@ La marca (nombre, eslogan, logo) está en `src/lib/marca.ts` y los logos en
 App interna y sencilla para que el administrador de la concesionaria haga
 **los papeles de una venta de auto**. Carga los datos del comprador, del
 vendedor y del auto, y la app genera el boleto de compraventa, los recibos,
-la factura, la hoja de datos del Formulario 08 y el acta de entrega, listos
-para imprimir. También lleva el stock de autos con fotos.
+la hoja de datos del Formulario 08 y el acta de entrega, listos para
+imprimir. También lleva el stock de autos con fotos.
 
 Pedido original de Esteban (audio, septiembre 2026): "no hacer nada como una
 concesionaria grande, sino solamente la generación del contrato de
@@ -37,7 +37,14 @@ también le quede un recibo cuando le pagan".
 
 ## Cómo funciona
 
-1. `/` redirige al panel (o a `/login` si no hay sesión).
+1. `/` es la **portada pública para clientes**: logo, "Más de 25 años de
+   trayectoria", servicios, historia, video vertical, autos disponibles
+   (los del stock con fotos y sin vender, sin precio: botón "Consultar" a
+   WhatsApp), ubicación y WhatsApp flotante. "Acceso equipo" lleva al login.
+   - **Video**: `public/video/inicio.mp4` + `inicio.webm` + `inicio.jpg`
+     (poster). Hoy es un video de muestra armado con posteos de Instagram;
+     para cambiarlo se reemplazan esos 3 archivos (mismo nombre).
+   - Textos, WhatsApp, Instagram y dirección en `src/lib/marca.ts`.
 2. `/register` crea la cuenta de la concesionaria → `/dealer/onboarding`
    pide los datos que salen impresos (razón social, CUIT, IVA, domicilio).
 3. Panel `/dealer` (barra inferior tipo app en el celular):
@@ -45,13 +52,18 @@ también le quede un recibo cuando le pagan".
      comprador → pago) con vista previa del boleto en vivo. Autocompleta
      clientes por DNI.
    - `operaciones/[id]` — carpeta: recibos numerados por cada pago, datos
-     de la factura (CAE), entrega y checklist de trámites con % de avance.
-   - `operaciones/[id]/imprimir` — boleto (por duplicado), recibo (original
-     + duplicado), factura A/B/C automática, datos del 08, acta de entrega.
+     entrega y checklist de trámites con % de avance.
+   - `operaciones/[id]/imprimir` — boleto (por duplicado, **mismo formato y
+     cláusulas que el boleto en papel de la agencia**, formulario NOR-PAC:
+     encabezado con lugar/fecha/partes, 1º objeto, 2º condiciones de pago,
+     3º posesión, 4º mora, 5º gastos de transferencia y plazo, 6º otra),
+     recibo simple con membrete (original + duplicado), datos del 08 y acta
+     de entrega. **No hay factura**: Esteban pidió solo recibo, sin cuestiones
+     fiscales.
    - `stock` — autos con fotos (comprimidas en el navegador y guardadas en
      la misma base de datos, sin storage pago), margen y "Compartir ficha"
      por WhatsApp.
-   - `ajustes` — punto de venta, Ingresos Brutos, inicio de actividades.
+   - `ajustes` — datos de la agencia que salen en los papeles.
    - `stock/[id]/posteo` y `operaciones/[id]/posteo` — **generador de
      posteos de Instagram** con el diseño de la agencia ("Nuevo Ingreso",
      "Usados Seleccionados", "0 km", "Nueva Entrega", "Felicitaciones"):
@@ -61,9 +73,6 @@ también le quede un recibo cuando le pagan".
 
 ## Qué falta / ideas para ampliar
 
-- Pedir el CAE automáticamente a ARCA/AFIP (Web Service WSFE). Hoy la
-  factura se arma sola, pero el CAE se pide en "Comprobantes en línea" y se
-  carga a mano.
 - Usuarios empleados (`DEALER_STAFF`) invitados por el dueño.
 - Firma digital del boleto / envío por WhatsApp del PDF.
 - Que un abogado o escribano revise el texto modelo del boleto.

@@ -5,11 +5,8 @@ import type { Prisma } from "@prisma/client";
 
 import { getDealerOrNull } from "@/lib/dealer";
 import { prisma } from "@/lib/prisma";
-import { tipoDeFactura } from "@/lib/sales/comprobantes";
 import {
-  datosFiscalesSchema,
   entregaSchema,
-  facturaSchema,
   nn,
   operacionSchema,
   reciboSchema,
@@ -104,8 +101,8 @@ export async function crearOperacionAction(raw: OperacionValues): Promise<Action
         tradeInDescription: nn(v.tradeInDescription),
         tradeInPatente: nn(v.tradeInPatente)?.toUpperCase() ?? null,
         tradeInValueArs: v.tradeInValueArs || null,
-        invoiceType: v.sellerIsDealership ? tipoDeFactura(ctx.dealership.afipConditionIva, buyer.ivaCondition) : null,
-        ivaRate: v.ivaRate,
+        transferCostsBy: v.transferCostsBy,
+        transferDays: v.transferDays,
         checklist,
         notes: nn(v.notes),
         createdById: ctx.user.id,
@@ -192,27 +189,6 @@ export async function toggleTramiteAction(saleId: string, paso: string, hecho: b
   return { ok: true };
 }
 
-export async function guardarFacturaAction(raw: z.input<typeof facturaSchema>): Promise<ActionResult> {
-  const parsed = facturaSchema.safeParse(raw);
-  if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Datos inválidos." };
-  const v = parsed.data;
-  const found = await ventaPropia(v.saleId);
-  if (!found) return { ok: false, error: "No encontramos la operación." };
-  const checklist = { ...((found.sale.checklist as Record<string, boolean>) ?? {}) };
-  if (v.afipCae) checklist.factura = true;
-  await prisma.sale.update({
-    where: { id: v.saleId },
-    data: {
-      invoiceNumber: v.invoiceNumber ?? null,
-      afipCae: nn(v.afipCae),
-      afipCaeExpiry: nn(v.afipCaeExpiry),
-      checklist,
-    },
-  });
-  revalidatePath(`/dealer/operaciones/${v.saleId}`);
-  return { ok: true };
-}
-
 export async function registrarEntregaAction(raw: z.input<typeof entregaSchema>): Promise<ActionResult> {
   const parsed = entregaSchema.safeParse(raw);
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Datos inválidos." };
@@ -248,23 +224,6 @@ export async function anularOperacionAction(saleId: string): Promise<ActionResul
       },
     }),
   ]);
-  revalidatePath("/dealer", "layout");
-  return { ok: true };
-}
-
-export async function guardarDatosFiscalesAction(raw: z.input<typeof datosFiscalesSchema>): Promise<ActionResult> {
-  const ctx = await getDealerOrNull();
-  if (!ctx) return { ok: false, error: "Tu sesión expiró." };
-  const parsed = datosFiscalesSchema.safeParse(raw);
-  if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Datos inválidos." };
-  await prisma.dealership.update({
-    where: { id: ctx.dealership.id },
-    data: {
-      pointOfSale: parsed.data.pointOfSale,
-      grossIncomeNumber: nn(parsed.data.grossIncomeNumber),
-      activityStartDate: nn(parsed.data.activityStartDate),
-    },
-  });
   revalidatePath("/dealer", "layout");
   return { ok: true };
 }
