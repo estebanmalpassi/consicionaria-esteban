@@ -20,7 +20,7 @@ export async function registerAction(
     return { ok: false, error: parsed.error.issues[0]?.message ?? "Datos inválidos." };
   }
 
-  const { name, email, password, accountType } = parsed.data;
+  const { name, email, password } = parsed.data;
   const normalizedEmail = email.toLowerCase();
 
   const existing = await prisma.user.findUnique({ where: { email: normalizedEmail } });
@@ -38,7 +38,7 @@ export async function registerAction(
       name,
       email: normalizedEmail,
       passwordHash,
-      role: accountType,
+      role: "DEALER_OWNER",
     },
   });
 
@@ -53,6 +53,6 @@ export async function registerAction(
 
   return {
     ok: true,
-    redirectTo: accountType === "DEALER_OWNER" ? "/dealer/onboarding" : "/",
+    redirectTo: "/dealer/onboarding",
   };
 }

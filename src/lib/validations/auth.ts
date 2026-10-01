@@ -11,7 +11,6 @@ export const registerSchema = z
     email: z.string().email("Ingresá un email válido."),
     password: z.string().min(8, "La contraseña debe tener al menos 8 caracteres."),
     confirmPassword: z.string(),
-    accountType: z.enum(["BUYER", "DEALER_OWNER"]),
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: "Las contraseñas no coinciden.",

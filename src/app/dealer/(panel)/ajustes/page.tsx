@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import { requireDealer } from "@/lib/dealer";
 import { AFIP_CONDITION_LABELS } from "@/lib/validations/dealership";
 import { FormDatosFiscales } from "@/components/dealer/form-datos-fiscales";
@@ -18,7 +20,9 @@ export default async function AjustesPage() {
           <Dato k="Domicilio" v={[d.addressStreet, d.addressCity, d.province].filter(Boolean).join(", ")} />
           <Dato k="Teléfono" v={d.phone ?? "—"} />
         </dl>
-        <p className="text-muted-foreground text-xs">Para cambiarlos, volvé a completar el registro de la concesionaria.</p>
+        <Link href="/dealer/onboarding" className="text-primary w-fit text-sm font-medium hover:underline">
+          Editar datos de la concesionaria
+        </Link>
       </section>
 
       <section className="bg-card grid gap-4 rounded-2xl border p-5">

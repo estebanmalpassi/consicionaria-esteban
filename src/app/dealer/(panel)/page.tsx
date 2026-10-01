@@ -1,12 +1,11 @@
 import Link from "next/link";
-import { ArrowRight, Camera, Car, FileSignature, Receipt, ShieldCheck, TrendingUp } from "lucide-react";
+import { ArrowRight, Camera, Car, FileSignature, Receipt, TrendingUp } from "lucide-react";
 
 import { requireDealer } from "@/lib/dealer";
 import { FOTO_SELECT, fotoUrl } from "@/lib/fotos";
 import { prisma } from "@/lib/prisma";
 import { ESTADO_VENTA_LABELS, progresoTramite } from "@/lib/sales/comprobantes";
 import { formatArs } from "@/lib/utils";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { AnilloProgreso } from "@/components/dealer/anillo-progreso";
 
@@ -129,12 +128,6 @@ export default async function PanelInicioPage() {
         )}
       </section>
 
-      <div className="text-muted-foreground flex flex-wrap items-center gap-2 text-xs">
-        <ShieldCheck className="size-3.5" /> Cuenta de {dealership.legalName} · CUIT {dealership.cuit}
-        <Badge variant={dealership.status === "VERIFIED" ? "trust" : "warning"}>
-          {dealership.status === "VERIFIED" ? "Verificada para el marketplace" : "Verificación del marketplace pendiente"}
-        </Badge>
-      </div>
     </div>
   );
 }
