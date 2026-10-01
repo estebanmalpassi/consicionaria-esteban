@@ -78,6 +78,11 @@ model Dealership {
   phone         String?
   website       String?
 
+  // Datos para comprobantes (factura, recibos, boleto)
+  pointOfSale       Int     @default(1) // punto de venta AFIP
+  grossIncomeNumber String? // Nº de Ingresos Brutos
+  activityStartDate String? // inicio de actividades (texto libre, ej. "01/03/2015")
+
   ownerId String  @unique
   owner   User    @relation("DealershipOwner", fields: [ownerId], references: [id])
   staff   User[]  @relation("DealershipStaff")
@@ -87,6 +92,8 @@ model Dealership {
   subscription  Subscription?
   invoices      Invoice[]
   auditLogs     AuditLog[]
+  customers     Customer[]
+  sales         Sale[]
 
   verifiedAt DateTime?
   createdAt  DateTime  @default(now())
@@ -170,10 +177,13 @@ model Vehicle {
   year        Int
   mileageKm   Int
   priceArs    Decimal          @db.Decimal(14, 2)
-  fuelType    FuelType
-  transmission TransmissionType
+  fuelType    FuelType         @default(NAFTA)
+  transmission TransmissionType @default(MANUAL)
   color       String?
   description String?
+  bodyType     String? // sedán, hatchback, pick-up, SUV...
+  engineNumber String? // número de motor (necesario para el 08 y el boleto)
+  purchasePriceArs Decimal? @db.Decimal(14, 2) // costo de compra, para ver el margen (uso interno)
 
   city     String?
   province String?
@@ -186,6 +196,7 @@ model Vehicle {
   savedBy       SavedListing[]
   swipeActions  SwipeAction[]
   invoices      Invoice[]
+  sales         Sale[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -201,7 +212,10 @@ model VehiclePhoto {
   vehicleId String
   vehicle   Vehicle @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
 
-  url      String
+  url      String? // URL externa (storage futuro); si es null la foto está en `data`
+  data     Bytes?  // JPEG comprimido en el navegador antes de subir
+  mimeType String?
+  label    String? // "Frente", "Interior", "Tablero"...
   order    Int     @default(0)
   isCover  Boolean @default(false)
 
@@ -358,6 +372,133 @@ model Invoice {
   createdAt DateTime  @default(now())
 
   @@index([dealershipId])
+}
+
+// ---------------------------------------------------------------------------
+// Ventas: clientes, operación y carpeta de documentación
+// ---------------------------------------------------------------------------
+
+enum IvaCondition {
+  CONSUMIDOR_FINAL
+  RESPONSABLE_INSCRIPTO
+  MONOTRIBUTO
+  EXENTO
+}
+
+// Persona que interviene en una operación: comprador o vendedor particular.
+model Customer {
+  id           String     @id @default(cuid())
+  dealershipId String
+  dealership   Dealership @relation(fields: [dealershipId], references: [id], onDelete: Cascade)
+
+  fullName      String
+  docType       String       @default("DNI") // DNI, CUIT, CUIL, Pasaporte
+  docNumber     String
+  ivaCondition  IvaCondition @default(CONSUMIDOR_FINAL)
+  nationality   String?
+  maritalStatus String?
+  birthDate     String?
+  occupation    String?
+  address       String?
+  city          String?
+  province      String?
+  postalCode    String?
+  phone         String?
+  email         String?
+
+  purchases     Sale[] @relation("SaleBuyer")
+  salesAsSeller Sale[] @relation("SaleSeller")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([dealershipId, docNumber])
+  @@index([dealershipId])
+}
+
+enum SaleStatus {
+  RESERVADA  // se tomó una seña
+  VENDIDA    // operación cerrada, falta entregar
+  ENTREGADA  // auto entregado
+  ANULADA
+}
+
+enum PaymentMethod {
+  CONTADO
+  TRANSFERENCIA
+  FINANCIADO
+  PERMUTA
+  MIXTO
+}
+
+model Sale {
+  id           String     @id @default(cuid())
+  dealershipId String
+  dealership   Dealership @relation(fields: [dealershipId], references: [id], onDelete: Cascade)
+  number       Int        // número de operación correlativo por concesionaria
+
+  vehicleId  String
+  vehicle    Vehicle  @relation(fields: [vehicleId], references: [id])
+  buyerId  String
+  buyer    Customer  @relation("SaleBuyer", fields: [buyerId], references: [id])
+  // null = vende la propia concesionaria; si no, un particular (consignación / intermediación)
+  sellerId String?
+  seller   Customer? @relation("SaleSeller", fields: [sellerId], references: [id])
+
+  status        SaleStatus    @default(VENDIDA)
+  saleDate      DateTime      @default(now())
+  priceArs      Decimal       @db.Decimal(14, 2)
+  depositArs    Decimal       @default(0) @db.Decimal(14, 2) // seña / pago a cuenta
+  paymentMethod PaymentMethod @default(CONTADO)
+  paymentNotes  String?
+
+  // Permuta: el cliente entrega un usado como parte de pago
+  tradeInDescription String?
+  tradeInPatente     String?
+  tradeInValueArs    Decimal? @db.Decimal(14, 2)
+
+  deliveryDate DateTime?
+  deliveryKm   Int?
+
+  // Comprobante fiscal
+  invoiceType   InvoiceType?
+  ivaRate       Decimal      @default(21) @db.Decimal(5, 2)
+  invoiceNumber Int?
+  afipCae       String?
+  afipCaeExpiry String?
+
+  checklist Json?   // { [paso]: true } — trámites de transferencia completados
+  notes     String?   // cláusulas o aclaraciones que se imprimen en el boleto
+
+  receipts Receipt[]
+
+  createdById String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([dealershipId, number])
+  @@index([dealershipId])
+  @@index([vehicleId])
+  @@index([buyerId])
+}
+
+// Recibo por cada pago de la operación (seña, saldo, cuota...)
+model Receipt {
+  id     String @id @default(cuid())
+  saleId String
+  sale   Sale   @relation(fields: [saleId], references: [id], onDelete: Cascade)
+
+  number    Int      // correlativo por concesionaria
+  date      DateTime @default(now())
+  amountArs Decimal  @db.Decimal(14, 2)
+  concept   String   // "Seña", "Saldo de precio", "Pago total"...
+  method    PaymentMethod @default(CONTADO)
+  notes     String?
+
+  createdAt DateTime @default(now())
+
+  @@index([saleId])
 }
 
 // ---------------------------------------------------------------------------

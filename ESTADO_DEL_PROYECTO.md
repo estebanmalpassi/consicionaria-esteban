@@ -38,6 +38,33 @@ un vehículo.
 Todo esto se probó de punta a punta (registro → onboarding → dashboard)
 contra un Postgres real, no solo con mocks.
 
+5. **Gestión de ventas y papeles** (pedido de Esteban por audio, octubre 2026):
+   "algo sencillo para generar el boleto de compraventa automáticamente,
+   cargando datos del comprador, vendedor y auto, y que también quede un
+   recibo cuando le pagan". Panel en `/dealer` (barra inferior tipo app en
+   el celular):
+   - `/dealer/operaciones/nueva` — asistente de 4 pasos (auto → vendedor →
+     comprador → pago) con **vista previa del boleto en vivo**. El vendedor
+     puede ser la concesionaria o un particular (consignación). Al poner el
+     DNI de alguien que ya operó, se autocompletan sus datos.
+   - `/dealer/operaciones/[id]` — "carpeta" de la operación: papeles para
+     imprimir, pagos con recibo numerado, datos de factura (CAE), entrega y
+     checklist de trámites de transferencia con % de avance.
+   - `/dealer/operaciones/[id]/imprimir` — boleto (por duplicado), recibo
+     (original + duplicado), factura A/B/C (letra automática según IVA,
+     "BORRADOR SIN CAE" hasta cargar el CAE), datos para el Formulario 08 y
+     acta de entrega. Se imprimen o se guardan en PDF desde el navegador.
+     Montos en letras automáticos (`src/lib/sales/numero-a-letras.ts`).
+   - `/dealer/stock` — autos con fotos. Las fotos se comprimen en el celular
+     y se guardan **en la misma base de datos** (Neon gratis), sin pagar un
+     storage aparte. Guía de tomas (frente, lateral, interior...), cámara
+     directa en el celular, margen de ganancia y "Compartir ficha" por
+     WhatsApp.
+   - `/dealer/ajustes` — punto de venta, Ingresos Brutos, inicio de actividades.
+
+   El panel de gestión se habilita apenas se completa el registro de la
+   concesionaria (no espera la verificación del marketplace).
+
 ## Qué falta (no está implementado todavía)
 
 - Alta de vehículos (`/dealer/listings/new`) — fotos + patente
@@ -48,7 +75,10 @@ contra un Postgres real, no solo con mocks.
   `DOCS_SUBMITTED`/`IN_REVIEW` a `VERIFIED`)
 - Verificación real contra AFIP/DNRPA (hoy es 100% mock)
 - Subida real de archivos (el wizard hoy solo guarda el nombre del archivo)
-- Mercado Pago / Stripe / Factura A-B-C
+- Pedir el CAE automáticamente a ARCA/AFIP (Web Service WSFE). Hoy la
+  factura se arma sola pero el CAE se pide en "Comprobantes en línea" y se
+  carga a mano
+- Mercado Pago / Stripe
 
 ## Estado del deploy online (en progreso)
 
@@ -75,6 +105,15 @@ deployando online:
 Confirmar que el deploy en Vercel terminó bien y probar `/register` →
 `/dealer/onboarding` → `/dealer` contra la URL pública que da Vercel
 (algo como `consicionaria-esteban.vercel.app`).
+
+### Para publicar los cambios nuevos en Vercel
+
+Los cambios están en la rama `claude/dealership-invoice-app-91b5g9`. Vercel
+crea solo una versión de prueba (Preview) de esa rama. Para que quede en la
+URL principal hay que pasarla a `main` (merge del Pull Request). La
+migración nueva (`prisma/migrations/*_operaciones_boleto_recibos_y_fotos`)
+se aplica sola en Neon porque el Build Command ya corre
+`npx prisma migrate deploy`.
 
 ## Cómo retomar
 
