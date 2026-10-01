@@ -45,7 +45,7 @@ export function LoginForm() {
   });
 
   return (
-    <Card className="w-full max-w-sm">
+    <Card className="w-full max-w-sm border-0 shadow-2xl shadow-black/40">
       <CardHeader>
         <CardTitle className="text-xl">Iniciar sesión</CardTitle>
         <CardDescription>Entrá al panel de tu concesionaria.</CardDescription>

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, FileText, PartyPopper, Printer, ReceiptText } from "lucide-react";
+import { ArrowLeft, FileText, Sparkles, PartyPopper, Printer, ReceiptText } from "lucide-react";
 
 import { requireDealer } from "@/lib/dealer";
 import {
@@ -153,12 +153,19 @@ export default async function CarpetaOperacionPage({ params, searchParams }: Pag
           {!anulada && (
             <Seccion titulo="Entrega del auto">
               {op.deliveryDate ? (
-                <p className="text-sm">
-                  Entregado el <b>{fechaCorta(op.deliveryDate)}</b> con <b>{op.deliveryKm?.toLocaleString("es-AR")} km</b>.{" "}
-                  <Link href={imprimir("entrega")} target="_blank" className="text-primary hover:underline">
-                    Imprimir acta
-                  </Link>
-                </p>
+                <div className="grid gap-3">
+                  <p className="text-sm">
+                    Entregado el <b>{fechaCorta(op.deliveryDate)}</b> con <b>{op.deliveryKm?.toLocaleString("es-AR")} km</b>.{" "}
+                    <Link href={imprimir("entrega")} target="_blank" className="text-primary hover:underline">
+                      Imprimir acta
+                    </Link>
+                  </p>
+                  <Button asChild variant="outline" className="border-gold/60 h-11 w-fit">
+                    <Link href={`/dealer/operaciones/${op.id}/posteo`}>
+                      <Sparkles className="text-gold size-4" /> Crear posteo de &quot;Nueva Entrega&quot;
+                    </Link>
+                  </Button>
+                </div>
               ) : (
                 <FormEntrega saleId={op.id} km={v.mileageKm} />
               )}

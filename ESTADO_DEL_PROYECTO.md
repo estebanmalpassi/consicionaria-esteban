@@ -6,6 +6,12 @@
 
 ## Qué es esto
 
+**Agencia**: Cartuccia Automotores — Fray Mamerto Esquiú 57, Berrotarán,
+Córdoba (Instagram `@automotores_cartuccia`). Fundada por Osvaldo
+Cartuccia hace más de 25 años; Javier Cartuccia la dirige con él desde 2018.
+La marca (nombre, eslogan, logo) está en `src/lib/marca.ts` y los logos en
+`public/marca/`. Colores: azul noche + dorado.
+
 App interna y sencilla para que el administrador de la concesionaria haga
 **los papeles de una venta de auto**. Carga los datos del comprador, del
 vendedor y del auto, y la app genera el boleto de compraventa, los recibos,
@@ -46,6 +52,12 @@ también le quede un recibo cuando le pagan".
      la misma base de datos, sin storage pago), margen y "Compartir ficha"
      por WhatsApp.
    - `ajustes` — punto de venta, Ingresos Brutos, inicio de actividades.
+   - `stock/[id]/posteo` y `operaciones/[id]/posteo` — **generador de
+     posteos de Instagram** con el diseño de la agencia ("Nuevo Ingreso",
+     "Usados Seleccionados", "0 km", "Nueva Entrega", "Felicitaciones"):
+     foto + recuadro azul + escudo, 1080×1350, dibujado en el navegador
+     (canvas). Se descarga o se comparte directo desde el celular, con la
+     descripción sugerida para copiar.
 
 ## Qué falta / ideas para ampliar
 

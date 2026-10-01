@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, FileSignature } from "lucide-react";
+import { ArrowLeft, FileSignature, Sparkles } from "lucide-react";
 
 import { requireDealer } from "@/lib/dealer";
 import { FOTO_SELECT, fotoUrl } from "@/lib/fotos";
@@ -81,6 +81,11 @@ export default async function FichaAutoPage({ params }: PageProps<"/dealer/stock
               </Link>
             </Button>
           )}
+          <Button asChild variant="outline" size="lg" className="border-gold/60 h-12">
+            <Link href={`/dealer/stock/${auto.id}/posteo`}>
+              <Sparkles className="text-gold size-4" /> Crear posteo para Instagram
+            </Link>
+          </Button>
           <CompartirFicha texto={ficha} />
           {!venta && <BorrarVehiculo vehicleId={auto.id} />}
         </div>

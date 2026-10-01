@@ -12,8 +12,8 @@
 :root {
   --radius: 0.75rem;
 
-  --background: oklch(0.99 0.002 260);
-  --foreground: oklch(0.18 0.02 260);
+  --background: oklch(0.985 0.003 250);
+  --foreground: oklch(0.2 0.03 250);
 
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.18 0.02 260);
@@ -21,8 +21,13 @@
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.18 0.02 260);
 
-  --primary: oklch(0.42 0.19 264);
-  --primary-foreground: oklch(0.98 0.005 260);
+  /* Azul noche de la marca Cartuccia */
+  --primary: oklch(0.27 0.045 250);
+  --primary-foreground: oklch(0.98 0.005 250);
+
+  /* Dorado del escudo, para acentos (nunca para texto largo sobre blanco) */
+  --gold: oklch(0.76 0.11 82);
+  --gold-foreground: oklch(0.2 0.03 250);
 
   --secondary: oklch(0.96 0.005 260);
   --secondary-foreground: oklch(0.24 0.02 260);
@@ -30,8 +35,8 @@
   --muted: oklch(0.96 0.005 260);
   --muted-foreground: oklch(0.5 0.015 260);
 
-  --accent: oklch(0.94 0.02 264);
-  --accent-foreground: oklch(0.3 0.05 264);
+  --accent: oklch(0.95 0.012 250);
+  --accent-foreground: oklch(0.27 0.045 250);
 
   --destructive: oklch(0.58 0.22 27);
   --destructive-foreground: oklch(0.98 0.005 260);
@@ -46,7 +51,7 @@
 
   --border: oklch(0.9 0.006 260);
   --input: oklch(0.9 0.006 260);
-  --ring: oklch(0.6 0.14 264);
+  --ring: oklch(0.76 0.11 82);
 
   --chart-1: oklch(0.6 0.14 264);
   --chart-2: oklch(0.6 0.14 155);
@@ -56,17 +61,20 @@
 }
 
 .dark {
-  --background: oklch(0.16 0.014 260);
-  --foreground: oklch(0.95 0.005 260);
+  --background: oklch(0.17 0.03 250);
+  --foreground: oklch(0.95 0.005 250);
 
-  --card: oklch(0.2 0.016 260);
+  --card: oklch(0.21 0.035 250);
   --card-foreground: oklch(0.95 0.005 260);
 
-  --popover: oklch(0.2 0.016 260);
+  --popover: oklch(0.21 0.035 250);
   --popover-foreground: oklch(0.95 0.005 260);
 
-  --primary: oklch(0.72 0.15 264);
-  --primary-foreground: oklch(0.16 0.02 264);
+  --primary: oklch(0.78 0.11 82);
+  --primary-foreground: oklch(0.2 0.03 250);
+
+  --gold: oklch(0.78 0.11 82);
+  --gold-foreground: oklch(0.2 0.03 250);
 
   --secondary: oklch(0.26 0.014 260);
   --secondary-foreground: oklch(0.95 0.005 260);
@@ -74,8 +82,8 @@
   --muted: oklch(0.26 0.014 260);
   --muted-foreground: oklch(0.65 0.015 260);
 
-  --accent: oklch(0.3 0.03 264);
-  --accent-foreground: oklch(0.9 0.02 264);
+  --accent: oklch(0.28 0.04 250);
+  --accent-foreground: oklch(0.92 0.03 82);
 
   --destructive: oklch(0.65 0.2 27);
   --destructive-foreground: oklch(0.16 0.02 260);
@@ -107,6 +115,8 @@
   --color-popover-foreground: var(--popover-foreground);
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
+  --color-gold: var(--gold);
+  --color-gold-foreground: var(--gold-foreground);
   --color-secondary: var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);
   --color-muted: var(--muted);
@@ -135,6 +145,7 @@
   --radius-xl: calc(var(--radius) + 4px);
 
   --font-sans: var(--font-geist-sans);
+  --font-marca: var(--font-montserrat);
   --font-mono: var(--font-geist-mono);
 }
 
