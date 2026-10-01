@@ -39,7 +39,7 @@ export default async function CarpetaOperacionPage({ params, searchParams }: Pag
   const imprimir = (doc: string, extra = "") => `/dealer/operaciones/${op.id}/imprimir?doc=${doc}${extra}`;
 
   return (
-    <div className="mx-auto grid max-w-6xl gap-6 px-4 py-8 sm:px-6">
+    <div className="mx-auto grid max-w-6xl grid-cols-1 gap-6 px-4 py-8 sm:px-6">
       <Link href="/dealer/operaciones" className="text-muted-foreground inline-flex items-center gap-1 text-sm">
         <ArrowLeft className="size-4" /> Operaciones
       </Link>
@@ -55,7 +55,7 @@ export default async function CarpetaOperacionPage({ params, searchParams }: Pag
       )}
 
       <div className="flex flex-wrap items-start justify-between gap-4">
-        <div>
+        <div className="min-w-0">
           <p className="text-muted-foreground text-sm">
             Operación N° {op.number} · {fechaCorta(op.saleDate)} · {ESTADO_VENTA_LABELS[op.status]}
           </p>
@@ -76,8 +76,8 @@ export default async function CarpetaOperacionPage({ params, searchParams }: Pag
         <Cifra k="Saldo" v={formatArs(saldo)} destacado={saldo > 0} />
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-[1.3fr_1fr]">
-        <div className="grid content-start gap-6">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)]">
+        <div className="grid min-w-0 grid-cols-1 content-start gap-6">
           {/* Papeles */}
           <Seccion titulo="Papeles listos para imprimir" accion={
             <Button asChild size="sm" variant="outline">
@@ -167,7 +167,7 @@ export default async function CarpetaOperacionPage({ params, searchParams }: Pag
         </div>
 
         {/* Trámites */}
-        <div className="grid content-start gap-6">
+        <div className="grid min-w-0 grid-cols-1 content-start gap-6">
           <Seccion titulo={`Trámites · ${prog.hechos} de ${prog.total}`}>
             <ChecklistTramites key={JSON.stringify(checklist)} saleId={op.id} checklist={checklist} />
           </Seccion>
@@ -187,7 +187,7 @@ export default async function CarpetaOperacionPage({ params, searchParams }: Pag
 
 function Seccion({ titulo, accion, children }: { titulo: string; accion?: React.ReactNode; children: React.ReactNode }) {
   return (
-    <section className="bg-card grid gap-3 rounded-2xl border p-4 sm:p-5">
+    <section className="bg-card grid min-w-0 grid-cols-1 gap-3 rounded-2xl border p-4 sm:p-5">
       <div className="flex items-center justify-between gap-2">
         <h2 className="font-semibold">{titulo}</h2>
         {accion}

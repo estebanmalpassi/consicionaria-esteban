@@ -48,7 +48,7 @@ export function LoginForm() {
     <Card className="w-full max-w-sm">
       <CardHeader>
         <CardTitle className="text-xl">Iniciar sesión</CardTitle>
-        <CardDescription>Accedé a tu cuenta de comprador o concesionaria.</CardDescription>
+        <CardDescription>Entrá al panel de tu concesionaria.</CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={onSubmit} className="grid gap-4">
