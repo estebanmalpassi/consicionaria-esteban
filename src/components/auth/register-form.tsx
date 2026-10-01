@@ -5,9 +5,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Building2, Loader2, User } from "lucide-react";
+import { Loader2 } from "lucide-react";
 
-import { cn } from "@/lib/utils";
 import { registerAction } from "@/lib/actions/auth";
 import { registerSchema, type RegisterValues } from "@/lib/validations/auth";
 import { Button } from "@/components/ui/button";
@@ -23,15 +22,10 @@ export function RegisterForm() {
   const {
     register,
     handleSubmit,
-    watch,
-    setValue,
     formState: { errors },
   } = useForm<RegisterValues>({
     resolver: zodResolver(registerSchema),
-    defaultValues: { accountType: "BUYER" },
   });
-
-  const accountType = watch("accountType");
 
   const onSubmit = handleSubmit(async (values) => {
     setLoading(true);
@@ -52,39 +46,10 @@ export function RegisterForm() {
     <Card className="w-full max-w-sm">
       <CardHeader>
         <CardTitle className="text-xl">Crear cuenta</CardTitle>
-        <CardDescription>Elegí el tipo de cuenta que necesitás.</CardDescription>
+        <CardDescription>Creá el acceso para administrar las ventas de tu concesionaria.</CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={onSubmit} className="grid gap-4">
-          <div className="grid grid-cols-2 gap-2">
-            <button
-              type="button"
-              onClick={() => setValue("accountType", "BUYER")}
-              className={cn(
-                "flex flex-col items-center gap-1.5 rounded-lg border p-3 text-sm transition-colors",
-                accountType === "BUYER"
-                  ? "border-primary bg-accent text-accent-foreground"
-                  : "text-muted-foreground hover:bg-muted/50"
-              )}
-            >
-              <User className="size-5" />
-              Comprador
-            </button>
-            <button
-              type="button"
-              onClick={() => setValue("accountType", "DEALER_OWNER")}
-              className={cn(
-                "flex flex-col items-center gap-1.5 rounded-lg border p-3 text-sm transition-colors",
-                accountType === "DEALER_OWNER"
-                  ? "border-primary bg-accent text-accent-foreground"
-                  : "text-muted-foreground hover:bg-muted/50"
-              )}
-            >
-              <Building2 className="size-5" />
-              Concesionaria
-            </button>
-          </div>
-
           <div className="grid gap-1.5">
             <Label htmlFor="name">Nombre completo</Label>
             <Input id="name" autoComplete="name" {...register("name")} />

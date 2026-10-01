@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ShieldCheck } from "lucide-react";
+import { CarFront } from "lucide-react";
 
 import { auth, signOut } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
@@ -11,7 +11,7 @@ export async function SiteHeader() {
     <header className="border-b print:hidden">
       <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-6">
         <Link href="/" className="flex items-center gap-2 font-semibold">
-          <ShieldCheck className="text-trust size-5" />
+          <CarFront className="text-primary size-5" />
           Concesionaria Esteban
         </Link>
 

@@ -31,26 +31,9 @@ export const contactInfoSchema = z.object({
   province: z.string().min(2, "Seleccioná la provincia."),
   postalCode: z.string().min(3, "Ingresá el código postal."),
   phone: z.string().min(6, "Ingresá un teléfono de contacto."),
-  website: z.string().url("URL inválida.").optional().or(z.literal("")),
 });
 
-export const afipCredentialsSchema = z.object({
-  afipDelegationAccepted: z.literal(true, {
-    message: "Debés autorizar el acceso de solo lectura vía Clave Fiscal.",
-  }),
-  afipCredentialId: z.string().min(1, "Falta vincular la Clave Fiscal."),
-});
-
-export const documentsSchema = z.object({
-  cuitConstanciaUrl: z.string().min(1, "Subí la constancia de inscripción AFIP."),
-  legalIdUrl: z.string().min(1, "Subí el DNI del representante legal."),
-  businessLicenseUrl: z.string().optional(),
-});
-
-export const dealershipOnboardingSchema = businessInfoSchema
-  .merge(contactInfoSchema)
-  .merge(afipCredentialsSchema)
-  .merge(documentsSchema);
+export const dealershipOnboardingSchema = businessInfoSchema.merge(contactInfoSchema);
 
 export type DealershipOnboardingValues = z.infer<typeof dealershipOnboardingSchema>;
 

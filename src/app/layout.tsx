@@ -18,7 +18,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Concesionaria Esteban",
   description:
-    "Marketplace y SaaS para concesionarias en Argentina con verificación automática de documentación vehicular.",
+    "Gestión de ventas para concesionarias: boleto de compraventa, recibos, factura y stock con fotos.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
