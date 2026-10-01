@@ -44,7 +44,9 @@ también le quede un recibo cuando le pagan".
    - **Video**: `public/video/inicio.mp4` + `inicio.webm` + `inicio.jpg`
      (poster). Hoy es un video de muestra armado con posteos de Instagram;
      para cambiarlo se reemplazan esos 3 archivos (mismo nombre).
-   - Textos, WhatsApp, Instagram y dirección en `src/lib/marca.ts`.
+   - Textos, WhatsApp (+54 9 3585 09-0730, Javier), Instagram y dirección en
+     `src/lib/marca.ts`. Los botones abren WhatsApp con el mensaje ya escrito
+     (consulta general o "Me interesa el [auto]… ¿Sigue disponible?").
 2. **Acceso solo con código** (variables `CODIGO_INVITACION` para empleados y
    `CODIGO_DUENO` para el dueño, en Vercel; sin ninguna, el registro está
    cerrado).

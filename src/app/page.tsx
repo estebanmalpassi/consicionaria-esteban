@@ -4,11 +4,13 @@ import { ArrowDown, BadgeCheck, CarFront, FileCheck2, Handshake, MapPin, Sparkle
 import { auth } from "@/lib/auth";
 import { getAgencia } from "@/lib/dealer";
 import { FOTO_SELECT, fotoUrl } from "@/lib/fotos";
-import { MARCA } from "@/lib/marca";
+import { MARCA, linkWhatsapp } from "@/lib/marca";
 import { prisma } from "@/lib/prisma";
 import { formatKm } from "@/lib/utils";
 import { FUEL_LABELS } from "@/types/vehicle";
 import { VideoMarco } from "@/components/inicio/video-marco";
+
+const CONSULTA_GENERAL = linkWhatsapp(`¡Hola! Vengo de la página de ${MARCA.nombre} y quería hacer una consulta.`);
 
 const SERVICIOS = [
   { icono: BadgeCheck, titulo: "Usados seleccionados", texto: "Elegimos cada usado que ofrecemos." },
@@ -71,7 +73,7 @@ export default async function Inicio() {
           </p>
           <div className="mt-2 flex flex-wrap items-center justify-center gap-3">
             <a
-              href={MARCA.whatsapp}
+              href={CONSULTA_GENERAL}
               target="_blank"
               rel="noreferrer"
               className="inline-flex h-12 items-center gap-2 rounded-full bg-[#25d366] px-6 font-bold text-[#0b1520] shadow-lg shadow-[#25d366]/20 transition hover:brightness-110"
@@ -162,7 +164,9 @@ export default async function Inicio() {
                     </p>
                   </div>
                   <a
-                    href={MARCA.whatsapp}
+                    href={linkWhatsapp(
+                      `¡Hola! Me interesa el ${a.brand} ${a.model}${a.version ? ` ${a.version}` : ""} ${a.year} que vi en la página. ¿Sigue disponible?`
+                    )}
                     target="_blank"
                     rel="noreferrer"
                     className="inline-flex h-10 shrink-0 items-center gap-1.5 rounded-full bg-[#d4ad55] px-4 text-sm font-bold text-[#0b1520] transition hover:brightness-110"
@@ -187,6 +191,9 @@ export default async function Inicio() {
               <p className="text-xs font-semibold tracking-[0.25em] text-[#d4ad55] uppercase">Visitanos</p>
               <p className="mt-1 text-xl font-bold">{MARCA.direccion}</p>
               <p className="text-white/60">{MARCA.referencia}</p>
+              <a href={CONSULTA_GENERAL} target="_blank" rel="noreferrer" className="mt-1 inline-flex items-center gap-1.5 text-[#25d366] hover:underline">
+                <IconoWhatsapp className="size-4" /> {MARCA.whatsappVisible}
+              </a>
             </div>
           </div>
           <div className="flex flex-wrap justify-center gap-3">
@@ -216,7 +223,7 @@ export default async function Inicio() {
 
       {/* WhatsApp flotante */}
       <a
-        href={MARCA.whatsapp}
+        href={CONSULTA_GENERAL}
         target="_blank"
         rel="noreferrer"
         aria-label="Escribinos por WhatsApp"
