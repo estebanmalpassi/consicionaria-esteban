@@ -14,8 +14,9 @@ export const MARCA = {
   logoCirculo: "/marca/logo-circulo.png",
 
   // --- Portada pública ---------------------------------------------------
-  /** Link de WhatsApp de la bio de Instagram. */
-  whatsapp: "https://wa.link/a5szpx",
+  /** WhatsApp de la agencia (Javier): solo dígitos, con código de país, para wa.me. */
+  whatsappNumero: "5493585090730",
+  whatsappVisible: "358 509-0730",
   instagramUrl: "https://www.instagram.com/automotores_cartuccia/",
   direccion: "Fray Mamerto Esquiú 57, Berrotarán, Córdoba",
   /** Departamento de la provincia (lo pide el encabezado del boleto). */
@@ -33,3 +34,8 @@ export const MARCA = {
     "En 2018, Javier Cartuccia se unió al equipo para dirigir y desarrollar juntos la agencia.",
   ],
 } as const;
+
+/** Link a WhatsApp de la agencia con un mensaje ya escrito. */
+export function linkWhatsapp(mensaje: string) {
+  return `https://wa.me/${MARCA.whatsappNumero}?text=${encodeURIComponent(mensaje)}`;
+}
