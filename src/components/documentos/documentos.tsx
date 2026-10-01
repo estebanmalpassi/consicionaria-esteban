@@ -23,7 +23,7 @@ type Persona = NonNullable<Op["seller"]>;
 export function Hoja({ children, className = "", pie }: { children: React.ReactNode; className?: string; pie?: React.ReactNode }) {
   return (
     <article
-      className={`hoja mx-auto flex w-full max-w-[210mm] flex-col bg-white p-[14mm] font-serif text-[11pt] leading-relaxed text-neutral-900 shadow-lg ring-1 ring-black/5 print:min-h-[268mm] print:max-w-none print:p-0 print:text-[9.5pt] print:leading-snug print:shadow-none print:ring-0`}
+      className={`hoja mx-auto flex w-full max-w-[210mm] flex-col bg-white p-[6mm] sm:p-[14mm] font-serif text-[11pt] leading-relaxed text-neutral-900 shadow-lg ring-1 ring-black/5 print:min-h-[268mm] print:max-w-none print:p-0 print:text-[9.5pt] print:leading-snug print:shadow-none print:ring-0`}
     >
       <div className={className}>{children}</div>
       {pie}
@@ -53,8 +53,8 @@ function PieMarca({ op }: { op: Op }) {
 function Membrete({ op, titulo, derecha }: { op: Op; titulo: string; derecha?: React.ReactNode }) {
   const d = op.dealership;
   return (
-    <header className="mb-6 flex items-center justify-between gap-4 border-b-2 border-[#b8923b] pb-3 font-sans print:mb-4">
-      <div className="flex items-center gap-3">
+    <header className="mb-6 flex flex-wrap items-center justify-between gap-4 print:flex-nowrap border-b-2 border-[#b8923b] pb-3 font-sans print:mb-4">
+      <div className="flex min-w-0 items-center gap-3">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={MARCA.logoEscudo} alt="" className="h-12 w-auto shrink-0" />
         <div>

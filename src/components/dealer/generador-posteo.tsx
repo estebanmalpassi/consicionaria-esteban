@@ -102,7 +102,7 @@ export function GeneradorPosteo({
   };
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[minmax(0,420px)_minmax(0,1fr)] lg:items-start">
+    <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,420px)_minmax(0,1fr)] lg:items-start">
       <div className="grid gap-3 lg:sticky lg:top-6">
         <canvas
           ref={canvasRef}
