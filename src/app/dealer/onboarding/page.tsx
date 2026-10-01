@@ -23,7 +23,7 @@ export default async function DealerOnboardingPage() {
       <div>
         <h1 className="text-2xl font-bold tracking-tight">{d ? "Datos de la concesionaria" : "Contanos de tu concesionaria"}</h1>
         <p className="text-muted-foreground text-sm">
-          Estos datos salen impresos en los boletos, recibos y facturas. Lo completás una sola vez.
+          Estos datos salen impresos en el boleto y los recibos. Lo completás una sola vez.
         </p>
       </div>
       <div className="bg-card rounded-2xl border p-4 sm:p-6">

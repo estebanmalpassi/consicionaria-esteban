@@ -52,13 +52,18 @@ también le quede un recibo cuando le pagan".
      comprador → pago) con vista previa del boleto en vivo. Autocompleta
      clientes por DNI.
    - `operaciones/[id]` — carpeta: recibos numerados por cada pago, datos
-     de la factura (CAE), entrega y checklist de trámites con % de avance.
-   - `operaciones/[id]/imprimir` — boleto (por duplicado), recibo (original
-     + duplicado), factura A/B/C automática, datos del 08, acta de entrega.
+     entrega y checklist de trámites con % de avance.
+   - `operaciones/[id]/imprimir` — boleto (por duplicado, **mismo formato y
+     cláusulas que el boleto en papel de la agencia**, formulario NOR-PAC:
+     encabezado con lugar/fecha/partes, 1º objeto, 2º condiciones de pago,
+     3º posesión, 4º mora, 5º gastos de transferencia y plazo, 6º otra),
+     recibo simple con membrete (original + duplicado), datos del 08 y acta
+     de entrega. **No hay factura**: Esteban pidió solo recibo, sin cuestiones
+     fiscales.
    - `stock` — autos con fotos (comprimidas en el navegador y guardadas en
      la misma base de datos, sin storage pago), margen y "Compartir ficha"
      por WhatsApp.
-   - `ajustes` — punto de venta, Ingresos Brutos, inicio de actividades.
+   - `ajustes` — datos de la agencia que salen en los papeles.
    - `stock/[id]/posteo` y `operaciones/[id]/posteo` — **generador de
      posteos de Instagram** con el diseño de la agencia ("Nuevo Ingreso",
      "Usados Seleccionados", "0 km", "Nueva Entrega", "Felicitaciones"):
@@ -68,9 +73,6 @@ también le quede un recibo cuando le pagan".
 
 ## Qué falta / ideas para ampliar
 
-- Pedir el CAE automáticamente a ARCA/AFIP (Web Service WSFE). Hoy la
-  factura se arma sola, pero el CAE se pide en "Comprobantes en línea" y se
-  carga a mano.
 - Usuarios empleados (`DEALER_STAFF`) invitados por el dueño.
 - Firma digital del boleto / envío por WhatsApp del PDF.
 - Que un abogado o escribano revise el texto modelo del boleto.

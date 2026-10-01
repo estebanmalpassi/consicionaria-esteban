@@ -61,7 +61,8 @@ export const operacionSchema = z.object({
   tradeInDescription: opcional,
   tradeInPatente: opcional,
   tradeInValueArs: montoOpcional,
-  ivaRate: z.coerce.number().min(0).max(27).default(21),
+  transferCostsBy: z.enum(["COMPRADOR", "VENDEDOR", "AMBOS"]).default("COMPRADOR"),
+  transferDays: z.coerce.number().int().min(1).max(365).default(10),
   saleDate: z.string().min(1),
   notes: opcional,
 });
@@ -77,23 +78,10 @@ export const reciboSchema = z.object({
 });
 export type ReciboValues = z.input<typeof reciboSchema>;
 
-export const facturaSchema = z.object({
-  saleId: z.string().min(1),
-  invoiceNumber: z.coerce.number().int().positive().optional(),
-  afipCae: opcional,
-  afipCaeExpiry: opcional,
-});
-
 export const entregaSchema = z.object({
   saleId: z.string().min(1),
   deliveryDate: z.string().min(1),
   deliveryKm: z.coerce.number().int().min(0),
-});
-
-export const datosFiscalesSchema = z.object({
-  pointOfSale: z.coerce.number().int().min(1).max(99999),
-  grossIncomeNumber: opcional,
-  activityStartDate: opcional,
 });
 
 /** Convierte "" / undefined en null para guardar en la base. */

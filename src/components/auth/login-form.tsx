@@ -40,7 +40,7 @@ export function LoginForm() {
       return;
     }
 
-    router.push(searchParams.get("callbackUrl") || "/");
+    router.push(searchParams.get("callbackUrl") || "/dealer");
     router.refresh();
   });
 

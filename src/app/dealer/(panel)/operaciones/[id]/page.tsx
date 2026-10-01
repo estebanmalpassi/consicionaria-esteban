@@ -3,15 +3,7 @@ import { notFound } from "next/navigation";
 import { ArrowLeft, FileText, Sparkles, PartyPopper, Printer, ReceiptText } from "lucide-react";
 
 import { requireDealer } from "@/lib/dealer";
-import {
-  CONDICION_IVA_LABELS,
-  DOCUMENTOS,
-  ESTADO_VENTA_LABELS,
-  TIPO_FACTURA_LETRA,
-  numeroComprobante,
-  progresoTramite,
-  type CondicionIva,
-} from "@/lib/sales/comprobantes";
+import { DOCUMENTOS, ESTADO_VENTA_LABELS, numeroRecibo, progresoTramite } from "@/lib/sales/comprobantes";
 import { fechaCorta, obtenerOperacion, totalesOperacion } from "@/lib/sales/operacion";
 import { formatArs } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -20,7 +12,6 @@ import {
   AnularOperacion,
   ChecklistTramites,
   FormEntrega,
-  FormFactura,
   NuevoRecibo,
 } from "@/components/dealer/carpeta-operacion";
 
@@ -97,7 +88,7 @@ export default async function CarpetaOperacionPage({ params, searchParams }: Pag
                   <FileText className="text-primary mt-0.5 size-5 shrink-0" />
                   <span>
                     <span className="block text-sm font-medium">
-                      {d.id === "factura" && op.invoiceType ? `Factura ${TIPO_FACTURA_LETRA[op.invoiceType]}` : d.titulo}
+                      {d.titulo}
                     </span>
                     <span className="text-muted-foreground block text-xs">{d.descripcion}</span>
                   </span>
@@ -116,7 +107,7 @@ export default async function CarpetaOperacionPage({ params, searchParams }: Pag
                     <div className="min-w-0 flex-1">
                       <p className="truncate font-medium">{r.concept}</p>
                       <p className="text-muted-foreground font-mono text-xs">
-                        {numeroComprobante(dealership.pointOfSale, r.number)} · {fechaCorta(r.date)}
+                        {numeroRecibo(r.number)} · {fechaCorta(r.date)}
                       </p>
                     </div>
                     <span className="font-semibold tabular-nums">{formatArs(Number(r.amountArs))}</span>
@@ -131,23 +122,6 @@ export default async function CarpetaOperacionPage({ params, searchParams }: Pag
             )}
             {!anulada && <NuevoRecibo saleId={op.id} saldo={saldo} />}
           </Seccion>
-
-          {/* Factura */}
-          {op.invoiceType && (
-            <Seccion titulo={`Factura ${TIPO_FACTURA_LETRA[op.invoiceType]}`}>
-              <p className="text-muted-foreground text-sm">
-                Elegida automáticamente: {dealership.afipConditionIva === "RESPONSABLE_INSCRIPTO" ? "sos Responsable Inscripto" : "sos Monotributista/Exento"} y
-                el comprador es {CONDICION_IVA_LABELS[op.buyer.ivaCondition as CondicionIva].toLowerCase()}. Emitila en ARCA con estos datos y
-                cargá acá el número y el CAE: la factura impresa queda completa.
-              </p>
-              {op.afipCae && (
-                <p className="text-trust text-sm font-medium">
-                  Factura {numeroComprobante(dealership.pointOfSale, op.invoiceNumber)} · CAE {op.afipCae}
-                </p>
-              )}
-              <FormFactura saleId={op.id} invoiceNumber={op.invoiceNumber} afipCae={op.afipCae} afipCaeExpiry={op.afipCaeExpiry} />
-            </Seccion>
-          )}
 
           {/* Entrega */}
           {!anulada && (

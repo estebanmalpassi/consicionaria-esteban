@@ -55,7 +55,7 @@ export default async function PanelInicioPage() {
         >
           <FileSignature className="text-gold mb-6 size-8" />
           <p className="text-xl font-semibold">Nueva venta</p>
-          <p className="text-sm text-white/80">Boleto, recibo, factura y 08 en 4 pasos</p>
+          <p className="text-sm text-white/80">Boleto y recibo listos en 4 pasos</p>
           <ArrowRight className="text-gold absolute right-5 bottom-5 size-5 transition group-hover:translate-x-1" />
         </Link>
         <Link
@@ -73,7 +73,7 @@ export default async function PanelInicioPage() {
         <Indicador icono={Car} titulo="Autos en stock" valor={String(stock._count)} />
         <Indicador icono={TrendingUp} titulo="Valor del stock" valor={formatArs(Number(stock._sum.priceArs ?? 0))} />
         <Indicador icono={Receipt} titulo="Ventas del mes" valor={String(ventasMes._count)} />
-        <Indicador icono={TrendingUp} titulo="Facturado del mes" valor={formatArs(Number(ventasMes._sum.priceArs ?? 0))} />
+        <Indicador icono={TrendingUp} titulo="Vendido del mes" valor={formatArs(Number(ventasMes._sum.priceArs ?? 0))} />
       </div>
 
       {sinFotos > 0 && (

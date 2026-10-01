@@ -18,6 +18,8 @@ export const MARCA = {
   whatsapp: "https://wa.link/a5szpx",
   instagramUrl: "https://www.instagram.com/automotores_cartuccia/",
   direccion: "Fray Mamerto Esquiú 57, Berrotarán, Córdoba",
+  /** Departamento de la provincia (lo pide el encabezado del boleto). */
+  departamento: "Río Cuarto",
   referencia: "Frente a la plaza principal",
   mapsUrl: "https://www.google.com/maps/search/?api=1&query=Fray+Mamerto+Esqui%C3%BA+57%2C+Berrotar%C3%A1n%2C+C%C3%B3rdoba",
   /** Video vertical de la portada (reemplazar los archivos para cambiarlo). */

@@ -7,7 +7,7 @@ import { ArrowLeft, ArrowRight, Building2, Car, Check, FileSignature, Loader2, P
 
 import { crearOperacionAction } from "@/lib/actions/operaciones";
 import { guardarVehiculoAction } from "@/lib/actions/vehiculos";
-import { CONDICION_IVA_LABELS, FORMA_PAGO_LABELS, TIPO_FACTURA_LETRA, tipoDeFactura } from "@/lib/sales/comprobantes";
+import { FORMA_PAGO_LABELS } from "@/lib/sales/comprobantes";
 import { montoALetras } from "@/lib/sales/numero-a-letras";
 import type { OperacionValues, PersonaValues } from "@/lib/validations/operacion";
 import { cn, formatArs, formatKm } from "@/lib/utils";
@@ -33,7 +33,7 @@ interface Concesionaria {
   tradeName: string;
   legalName: string;
   cuit: string;
-  afipConditionIva: string | null;
+  ciudad: string | null;
 }
 
 const PASOS = [
@@ -68,7 +68,8 @@ export function AsistenteOperacion({
   const [formaPago, setFormaPago] = React.useState<OperacionValues["paymentMethod"]>("CONTADO");
   const [permuta, setPermuta] = React.useState({ descripcion: "", patente: "", valor: null as number | null });
   const [fecha, setFecha] = React.useState(hoy());
-  const [ivaRate, setIvaRate] = React.useState("21");
+  const [gastosPor, setGastosPor] = React.useState<"COMPRADOR" | "VENDEDOR" | "AMBOS">("COMPRADOR");
+  const [diasTransferencia, setDiasTransferencia] = React.useState("10");
   const [notasPago, setNotasPago] = React.useState("");
   const [clausulas, setClausulas] = React.useState("");
   const [error, setError] = React.useState<{ msg: string; field?: string } | null>(null);
@@ -77,9 +78,6 @@ export function AsistenteOperacion({
 
   const conPermuta = formaPago === "PERMUTA" || formaPago === "MIXTO";
   const saldo = (precio ?? 0) - (sena ?? 0) - (conPermuta ? permuta.valor ?? 0 : 0);
-  const letra = vendeConcesionaria
-    ? TIPO_FACTURA_LETRA[tipoDeFactura(concesionaria.afipConditionIva, comprador.ivaCondition as never)]
-    : null;
 
   const elegirAuto = (a: AutoDisponible) => {
     setVehicleId(a.id);
@@ -157,7 +155,8 @@ export function AsistenteOperacion({
       tradeInDescription: conPermuta ? permuta.descripcion : "",
       tradeInPatente: conPermuta ? permuta.patente : "",
       tradeInValueArs: conPermuta ? permuta.valor ?? 0 : 0,
-      ivaRate,
+      transferCostsBy: gastosPor,
+      transferDays: diasTransferencia,
       saleDate: fecha,
       notes: clausulas,
     });
@@ -325,17 +324,18 @@ export function AsistenteOperacion({
                   <Entrada id="notasPago" value={notasPago} onChange={(e) => setNotasPago(e.target.value)} />
                 </Campo>
                 <div className="grid grid-cols-2 gap-3">
-                  {vendeConcesionaria && concesionaria.afipConditionIva === "RESPONSABLE_INSCRIPTO" && (
-                    <Campo label="Alícuota IVA" htmlFor="iva">
-                      <Selector id="iva" value={ivaRate} onChange={(e) => setIvaRate(e.target.value)}>
-                        <option value="21">21 %</option>
-                        <option value="10.5">10,5 %</option>
-                        <option value="0">Sin IVA</option>
-                      </Selector>
-                    </Campo>
-                  )}
+                  <Campo label="Gastos de transferencia a cargo de" htmlFor="gastos">
+                    <Selector id="gastos" value={gastosPor} onChange={(e) => setGastosPor(e.target.value as typeof gastosPor)}>
+                      <option value="COMPRADOR">Comprador</option>
+                      <option value="VENDEDOR">Vendedor</option>
+                      <option value="AMBOS">Mitad cada uno</option>
+                    </Selector>
+                  </Campo>
+                  <Campo label="Plazo para transferir (días)" htmlFor="dias">
+                    <Entrada id="dias" inputMode="numeric" value={diasTransferencia} onChange={(e) => setDiasTransferencia(e.target.value.replace(/\D/g, ""))} />
+                  </Campo>
                 </div>
-                <Campo label="Cláusulas o aclaraciones extra (opcional)" htmlFor="clausulas" hint="Se imprimen en el boleto. Ej.: se entrega con VTV vigente y dos juegos de llaves.">
+                <Campo label="6º) Otra (opcional)" htmlFor="clausulas" hint="Se imprime en el punto 6º del boleto. Ej.: se entrega con VTV vigente y dos juegos de llaves.">
                   <AreaTexto id="clausulas" value={clausulas} onChange={(e) => setClausulas(e.target.value)} />
                 </Campo>
               </>
@@ -368,31 +368,29 @@ export function AsistenteOperacion({
       {/* Vista previa en vivo del boleto */}
       <aside className="lg:sticky lg:top-6">
         <div className="relative rounded-2xl border bg-[#fdfcf8] p-5 font-serif text-[13px] leading-relaxed text-neutral-800 shadow-xl shadow-black/5 dark:bg-neutral-100">
-          <div className="text-muted-foreground mb-1 flex items-center justify-between font-sans text-[10px] tracking-widest uppercase">
-            <span>Vista previa</span>
-            {letra && <span className="rounded border border-neutral-400 px-1.5 font-bold text-neutral-700">Factura {letra}</span>}
-          </div>
-          <p className="mb-3 text-center font-bold tracking-wide">BOLETO DE COMPRAVENTA</p>
+          <div className="text-muted-foreground mb-1 font-sans text-[10px] tracking-widest uppercase">Vista previa</div>
+          <p className="mb-3 text-center font-bold tracking-wide">BOLETO COMPRAVENTA</p>
           <p>
-            Entre <Dato v={vendeConcesionaria ? concesionaria.legalName : vendedor.fullName} />, {vendeConcesionaria ? "CUIT" : vendedor.docType}{" "}
-            <Dato v={vendeConcesionaria ? concesionaria.cuit : vendedor.docNumber} />, en adelante <b>EL VENDEDOR</b>, y <Dato v={comprador.fullName} />,{" "}
-            {comprador.docType} <Dato v={comprador.docNumber} />, domiciliado en <Dato v={comprador.address} />, en adelante <b>EL COMPRADOR</b>, se conviene:
+            En <Dato v={concesionaria.ciudad} />, a los <Dato v={fecha ? Number(fecha.slice(8, 10)) : null} /> días…, entre el/los señor/es{" "}
+            <Dato v={vendeConcesionaria ? concesionaria.legalName : vendedor.fullName} />, doc. de ident. nº{" "}
+            <Dato v={vendeConcesionaria ? concesionaria.cuit : vendedor.docNumber} />, en su carácter de <b>VENDEDOR/ES</b>, y el/los
+            señor/es <Dato v={comprador.fullName} />, doc. de ident. nº <Dato v={comprador.docNumber} />, domiciliado/s en calle{" "}
+            <Dato v={comprador.address} />, en su carácter de <b>COMPRADOR/ES</b>…
           </p>
           <p className="mt-2">
-            <b>PRIMERA:</b> El vendedor vende el automotor <Dato v={auto?.titulo} />, año <Dato v={auto?.year} />, dominio{" "}
-            <Dato v={auto?.patente} mono />, motor <Dato v={auto?.engineNumber} mono />, chasis <Dato v={auto?.vin} mono />.
+            <b>1º)</b> Vende/n un/a <Dato v={auto?.titulo} /> Dominio Nº <Dato v={auto?.patente} mono />, motor Nº{" "}
+            <Dato v={auto?.engineNumber} mono /> y Chasis Nº <Dato v={auto?.vin} mono /> en la suma de pesos{" "}
+            <span className="text-[11px]">{precio ? montoALetras(precio).replace(/^PESOS /, "").toLowerCase() : "…"}</span> (
+            <Dato v={precio ? formatArs(precio) : null} />).
           </p>
           <p className="mt-2">
-            <b>SEGUNDA:</b> Precio total <Dato v={precio ? formatArs(precio) : null} /> (
-            <span className="text-[11px]">{precio ? montoALetras(precio) : "…"}</span>).
+            <b>5º)</b> Gastos de transferencia a cargo de <Dato v={{ COMPRADOR: "el comprador", VENDEDOR: "el vendedor", AMBOS: "ambas partes" }[gastosPor]} />{" "}
+            dentro de los <Dato v={diasTransferencia} /> días.
           </p>
           <div className="mt-4 grid gap-1 border-t border-dashed border-neutral-300 pt-3 font-sans text-xs">
             <Fila k="Seña / entrega" v={sena ? formatArs(sena) : "—"} />
             {conPermuta && <Fila k="Permuta" v={permuta.valor ? formatArs(permuta.valor) : "—"} />}
             <Fila k="Saldo" v={precio ? formatArs(Math.max(saldo, 0)) : "—"} fuerte />
-            {letra && (
-              <Fila k="Comprobante" v={`Factura ${letra} · ${CONDICION_IVA_LABELS[comprador.ivaCondition as keyof typeof CONDICION_IVA_LABELS]}`} />
-            )}
           </div>
         </div>
       </aside>
