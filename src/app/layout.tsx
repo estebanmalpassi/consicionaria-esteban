@@ -24,9 +24,18 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(MARCA.sitio),
   title: MARCA.nombre,
   description:
     "Usados seleccionados, 0 km de diversas marcas y servicios de gestoría en Berrotarán, Córdoba. Más de 25 años de trayectoria.",
+  openGraph: {
+    title: `${MARCA.nombre} · ${MARCA.eslogan}`,
+    description: "Usados seleccionados, 0 km de diversas marcas y gestoría. Berrotarán, Córdoba.",
+    url: "/",
+    siteName: MARCA.nombre,
+    locale: "es_AR",
+    type: "website",
+  },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

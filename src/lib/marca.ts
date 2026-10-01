@@ -6,6 +6,8 @@
 export const MARCA = {
   nombre: "Cartuccia Automotores",
   nombreCorto: "Cartuccia",
+  /** Dirección pública del sitio (para links compartidos y vista previa). */
+  sitio: "https://cartucciaautomotores.vercel.app",
   eslogan: "Más de 25 años de trayectoria",
   instagram: "automotores_cartuccia",
   /** Escudo con fondo transparente (papeles, login). */

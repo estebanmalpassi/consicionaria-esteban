@@ -37,7 +37,7 @@ export function BorrarVehiculo({ vehicleId }: { vehicleId: string }) {
         variant="ghost"
         className="text-destructive justify-start"
         onClick={async () => {
-          if (!confirm("¿Borrar este auto y sus fotos? No se puede deshacer.")) return;
+          if (!confirm("¿Borrar este auto y sus fotos? Si tuvo ventas anuladas, también se borran. No se puede deshacer.")) return;
           const res = await borrarVehiculoAction(vehicleId);
           if (!res.ok) return setError(res.error ?? "No se pudo borrar.");
           router.push("/dealer/stock");

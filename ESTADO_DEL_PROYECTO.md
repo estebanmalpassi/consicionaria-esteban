@@ -42,8 +42,11 @@ también le quede un recibo cuando le pagan".
    (los del stock con fotos y sin vender, sin precio: botón "Consultar" a
    WhatsApp), ubicación y WhatsApp flotante. "Acceso equipo" lleva al login.
    - **Video**: `public/video/inicio.mp4` + `inicio.webm` + `inicio.jpg`
-     (poster). Hoy es un video de muestra armado con posteos de Instagram;
-     para cambiarlo se reemplazan esos 3 archivos (mismo nombre).
+     (poster). Hoy es un video de 17 s armado con 7 posteos de **entregas** de
+     su Instagram + tarjeta final; para cambiarlo se reemplazan esos 3
+     archivos (mismo nombre).
+   - **Vista previa al compartir** (WhatsApp/Instagram/Facebook):
+     `src/app/opengraph-image.png` + `metadataBase` = `MARCA.sitio`.
    - Textos, WhatsApp (+54 9 3585 09-0730, Javier), Instagram y dirección en
      `src/lib/marca.ts`. Los botones abren WhatsApp con el mensaje ya escrito
      (consulta general o "Me interesa el [auto]… ¿Sigue disponible?").
@@ -79,7 +82,8 @@ también le quede un recibo cuando le pagan".
      recibo simple con membrete (original + duplicado), datos del 08 y acta
      de entrega. **No hay factura**: Esteban pidió solo recibo, sin cuestiones
      fiscales.
-   - `stock` — autos con fotos (comprimidas en el navegador y guardadas en
+   - `stock` — autos con fotos ("Borrar auto" se habilita si no tiene una venta
+     activa; las ventas anuladas se borran con el auto) (comprimidas en el navegador y guardadas en
      la misma base de datos, sin storage pago), margen y "Compartir ficha"
      por WhatsApp.
    - `ajustes` — datos de la agencia que salen en los papeles.

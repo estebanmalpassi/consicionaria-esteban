@@ -87,7 +87,13 @@ export default async function FichaAutoPage({ params }: PageProps<"/dealer/stock
             </Link>
           </Button>
           <CompartirFicha texto={ficha} />
-          {!venta && <BorrarVehiculo vehicleId={auto.id} />}
+          {venta ? (
+            <p className="text-muted-foreground text-xs">
+              Para borrar este auto, primero anulá la operación N° {venta.number} (abajo de todo en la operación).
+            </p>
+          ) : (
+            <BorrarVehiculo vehicleId={auto.id} />
+          )}
         </div>
       </div>
 
