@@ -4,6 +4,7 @@ import { ArrowLeft } from "lucide-react";
 
 import { auth } from "@/lib/auth";
 import { getOwnDealership } from "@/lib/actions/dealership";
+import { getAgencia } from "@/lib/dealer";
 import { FormConcesionaria } from "@/components/dealer/form-concesionaria";
 
 export default async function DealerOnboardingPage() {
@@ -11,7 +12,9 @@ export default async function DealerOnboardingPage() {
   if (!session?.user) redirect("/login?callbackUrl=/dealer/onboarding");
   if (session.user.role !== "DEALER_OWNER") redirect("/dealer");
 
-  const d = await getOwnDealership(session.user.id);
+  const [d, agencia] = await Promise.all([getOwnDealership(session.user.id), getAgencia()]);
+  // Si la agencia ya existe, solo su dueño entra acá (a editar sus datos).
+  if (agencia && agencia.ownerId !== session.user.id) redirect("/sin-acceso");
 
   return (
     <div className="mx-auto grid w-full max-w-2xl gap-6 px-4 py-10 sm:px-6">

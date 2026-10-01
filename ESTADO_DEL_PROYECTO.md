@@ -45,8 +45,19 @@ también le quede un recibo cuando le pagan".
      (poster). Hoy es un video de muestra armado con posteos de Instagram;
      para cambiarlo se reemplazan esos 3 archivos (mismo nombre).
    - Textos, WhatsApp, Instagram y dirección en `src/lib/marca.ts`.
-2. `/register` crea la cuenta de la concesionaria → `/dealer/onboarding`
-   pide los datos que salen impresos (razón social, CUIT, IVA, domicilio).
+2. **Acceso solo con código de invitación** (variable `CODIGO_INVITACION` en
+   Vercel; sin ella el registro está cerrado).
+   - La **primera** cuenta que se registra es la dueña: carga los datos de la
+     agencia en `/dealer/onboarding`. Las siguientes entran como **empleados**
+     del mismo panel.
+   - La "agencia" es la primera concesionaria registrada (o la del CUIT de
+     `CUIT_AGENCIA`, si se configura). Cualquier otra cuenta ve `/sin-acceso`
+     y sus autos no salen en la portada.
+   - En **Ajustes → Equipo** el dueño ve quién tiene acceso, puede **quitar
+     acceso** y **hacer dueño** a otro (el anterior queda como empleado).
+   - Plan acordado: el desarrollador (Mauri) se registra primero y prueba;
+     después Javier se registra con el código y Mauri le pasa la propiedad
+     con "Hacer dueño".
 3. Panel `/dealer` (barra inferior tipo app en el celular):
    - `operaciones/nueva` — asistente de 4 pasos (auto → vendedor →
      comprador → pago) con vista previa del boleto en vivo. Autocompleta

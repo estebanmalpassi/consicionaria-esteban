@@ -1,35 +1,75 @@
+import { timingSafeEqual } from "node:crypto";
 import { redirect } from "next/navigation";
 
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
 /**
- * Devuelve la sesión y la concesionaria del usuario (dueño o empleado).
- * Para usar en páginas del panel: redirige si falta sesión o registro.
+ * La app es de una sola agencia (Cartuccia). La agencia es la concesionaria
+ * con el CUIT de `CUIT_AGENCIA` si está configurado; si no, la primera que se
+ * registró. Cualquier otra cuenta no tiene acceso al panel.
  */
-export async function requireDealer() {
+export async function getAgencia() {
+  const cuit = process.env.CUIT_AGENCIA?.replace(/\D/g, "");
+  if (cuit) return prisma.dealership.findUnique({ where: { cuit } });
+  return prisma.dealership.findFirst({ orderBy: { createdAt: "asc" } });
+}
+
+/** Compara el código de invitación sin filtrar información por el tiempo de respuesta. */
+export function codigoInvitacionValido(codigo: string) {
+  const esperado = process.env.CODIGO_INVITACION?.trim();
+  if (!esperado) return false;
+  const a = Buffer.from(codigo.trim());
+  const b = Buffer.from(esperado);
+  return a.length === b.length && timingSafeEqual(a, b);
+}
+
+type Acceso =
+  | { estado: "ok"; user: { id: string; name?: string | null; role: string }; dealership: NonNullable<Awaited<ReturnType<typeof getAgencia>>>; esDueno: boolean }
+  | { estado: "sin-sesion" }
+  | { estado: "falta-registro" }
+  | { estado: "sin-acceso" };
+
+/**
+ * Resuelve el acceso leyendo el rol y la concesionaria desde la base (no del
+ * token), así quitarle el acceso a alguien tiene efecto inmediato.
+ */
+async function resolverAcceso(): Promise<Acceso> {
   const session = await auth();
-  if (!session?.user) redirect("/login?callbackUrl=/dealer");
-  if (session.user.role !== "DEALER_OWNER" && session.user.role !== "DEALER_STAFF") redirect("/");
+  if (!session?.user) return { estado: "sin-sesion" };
 
-  const dealership = await findDealershipForUser(session.user.id);
-  if (!dealership) redirect("/dealer/onboarding");
+  const user = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: { id: true, name: true, role: true },
+  });
+  if (!user || (user.role !== "DEALER_OWNER" && user.role !== "DEALER_STAFF")) return { estado: "sin-acceso" };
 
-  return { user: session.user, dealership };
+  const [dealership, agencia] = await Promise.all([
+    prisma.dealership.findFirst({ where: { OR: [{ ownerId: user.id }, { staff: { some: { id: user.id } } }] } }),
+    getAgencia(),
+  ]);
+
+  if (!dealership) {
+    // Solo el dueño de una instalación nueva (sin agencia todavía) completa el registro.
+    return !agencia && user.role === "DEALER_OWNER" ? { estado: "falta-registro" } : { estado: "sin-acceso" };
+  }
+  if (agencia && dealership.id !== agencia.id) return { estado: "sin-acceso" };
+
+  return { estado: "ok", user, dealership, esDueno: dealership.ownerId === user.id };
+}
+
+/** Para páginas del panel: redirige si no hay sesión, registro o acceso. */
+export async function requireDealer() {
+  const acceso = await resolverAcceso();
+  if (acceso.estado === "sin-sesion") redirect("/login?callbackUrl=/dealer");
+  if (acceso.estado === "falta-registro") redirect("/dealer/onboarding");
+  if (acceso.estado === "sin-acceso") redirect("/sin-acceso");
+  return { user: acceso.user, dealership: acceso.dealership, esDueno: acceso.esDueno };
 }
 
 /** Variante para Server Actions y Route Handlers: no redirige, devuelve null. */
 export async function getDealerOrNull() {
-  const session = await auth();
-  if (!session?.user) return null;
-  if (session.user.role !== "DEALER_OWNER" && session.user.role !== "DEALER_STAFF") return null;
-  const dealership = await findDealershipForUser(session.user.id);
-  if (!dealership) return null;
-  return { user: session.user, dealership };
-}
-
-function findDealershipForUser(userId: string) {
-  return prisma.dealership.findFirst({
-    where: { OR: [{ ownerId: userId }, { staff: { some: { id: userId } } }] },
-  });
+  const acceso = await resolverAcceso();
+  if (acceso.estado !== "ok") return null;
+  return { user: acceso.user, dealership: acceso.dealership, esDueno: acceso.esDueno };
 }
