@@ -51,12 +51,12 @@ export default async function PanelInicioPage() {
       <div className="grid gap-3 sm:grid-cols-2">
         <Link
           href="/dealer/operaciones/nueva"
-          className="group from-primary relative overflow-hidden rounded-2xl bg-gradient-to-br to-indigo-500 p-5 text-white shadow-lg transition hover:shadow-xl"
+          className="group relative overflow-hidden rounded-2xl bg-[radial-gradient(ellipse_at_top_right,#2a4360_0%,#132233_60%,#0b1520_100%)] p-5 text-white shadow-lg ring-1 ring-[#d4ad55]/30 transition hover:shadow-xl"
         >
-          <FileSignature className="mb-6 size-8 opacity-90" />
+          <FileSignature className="text-gold mb-6 size-8" />
           <p className="text-xl font-semibold">Nueva venta</p>
           <p className="text-sm text-white/80">Boleto, recibo, factura y 08 en 4 pasos</p>
-          <ArrowRight className="absolute right-5 bottom-5 size-5 transition group-hover:translate-x-1" />
+          <ArrowRight className="text-gold absolute right-5 bottom-5 size-5 transition group-hover:translate-x-1" />
         </Link>
         <Link
           href="/dealer/stock/nuevo"

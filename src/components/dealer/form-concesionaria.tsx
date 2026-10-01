@@ -35,10 +35,10 @@ export function FormConcesionaria({ inicial }: { inicial?: Partial<DealershipOnb
     >
       <div className="grid gap-3 sm:grid-cols-2">
         <Campo label="Nombre comercial" htmlFor="tradeName" hint="Como te conocen los clientes.">
-          <Entrada id="tradeName" name="tradeName" required defaultValue={d("tradeName")} placeholder="Esteban Automotores" />
+          <Entrada id="tradeName" name="tradeName" required defaultValue={d("tradeName")} placeholder="Cartuccia Automotores" />
         </Campo>
         <Campo label="Razón social" htmlFor="legalName" hint="Como figura en ARCA (ex AFIP).">
-          <Entrada id="legalName" name="legalName" required defaultValue={d("legalName")} placeholder="Esteban Automotores S.R.L." />
+          <Entrada id="legalName" name="legalName" required defaultValue={d("legalName")} placeholder="Cartuccia Automotores S.R.L." />
         </Campo>
         <Campo label="CUIT" htmlFor="cuit">
           <Entrada id="cuit" name="cuit" required inputMode="numeric" defaultValue={d("cuit")} placeholder="30-71234567-4" />
@@ -52,7 +52,7 @@ export function FormConcesionaria({ inicial }: { inicial?: Partial<DealershipOnb
         </Campo>
       </div>
       <Campo label="Domicilio" htmlFor="addressStreet">
-        <Entrada id="addressStreet" name="addressStreet" required defaultValue={d("addressStreet")} placeholder="Av. San Martín 1234" />
+        <Entrada id="addressStreet" name="addressStreet" required defaultValue={d("addressStreet")} placeholder="Fray Mamerto Esquiú 57" />
       </Campo>
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <Campo label="Localidad" htmlFor="addressCity">

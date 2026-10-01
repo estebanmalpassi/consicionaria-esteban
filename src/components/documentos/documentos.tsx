@@ -14,26 +14,50 @@ import { fechaContrato, fechaCorta, totalesOperacion, type OperacionCompleta } f
 import { AFIP_CONDITION_LABELS } from "@/lib/validations/dealership";
 import { FUEL_LABELS, TRANSMISSION_LABELS } from "@/types/vehicle";
 import { formatArs, formatKm } from "@/lib/utils";
+import { MARCA } from "@/lib/marca";
 
 type Op = OperacionCompleta;
 type Persona = NonNullable<Op["seller"]>;
 
 /** Hoja A4. En pantalla se ve como papel; al imprimir ocupa la página completa. */
-export function Hoja({ children, className = "" }: { children: React.ReactNode; className?: string }) {
+export function Hoja({ children, className = "", pie }: { children: React.ReactNode; className?: string; pie?: React.ReactNode }) {
   return (
     <article
-      className={`hoja mx-auto w-full max-w-[210mm] bg-white p-[14mm] font-serif text-[11pt] leading-relaxed text-neutral-900 shadow-lg ring-1 ring-black/5 print:max-w-none print:p-0 print:text-[9.5pt] print:leading-snug print:shadow-none print:ring-0 ${className}`}
+      className={`hoja mx-auto flex w-full max-w-[210mm] flex-col bg-white p-[14mm] font-serif text-[11pt] leading-relaxed text-neutral-900 shadow-lg ring-1 ring-black/5 print:min-h-[268mm] print:max-w-none print:p-0 print:text-[9.5pt] print:leading-snug print:shadow-none print:ring-0`}
     >
-      {children}
+      <div className={className}>{children}</div>
+      {pie}
     </article>
+  );
+}
+
+/** Pie de marca: dirección de la agencia y eslogan, al final de cada hoja. */
+function PieMarca({ op }: { op: Op }) {
+  const d = op.dealership;
+  const direccion = [d.addressStreet, d.addressCity, d.province].filter(Boolean).join(", ");
+  return (
+    <footer className="mt-auto flex items-center justify-center gap-2 border-t border-neutral-200 pt-3 font-sans text-[9px] tracking-wide text-neutral-500 uppercase">
+      <span>{direccion}</span>
+      <span className="text-[#b8923b]">◆</span>
+      <span>{MARCA.eslogan}</span>
+      {d.phone && (
+        <>
+          <span className="text-[#b8923b]">◆</span>
+          <span>Tel. {d.phone}</span>
+        </>
+      )}
+    </footer>
   );
 }
 
 function Membrete({ op, titulo, derecha }: { op: Op; titulo: string; derecha?: React.ReactNode }) {
   const d = op.dealership;
   return (
-    <header className="mb-6 print:mb-4 flex items-start justify-between gap-4 border-b-2 border-neutral-800 pb-3 font-sans">
-      <div>
+    <header className="mb-6 flex items-center justify-between gap-4 border-b-2 border-[#b8923b] pb-3 font-sans print:mb-4">
+      <div className="flex items-center gap-3">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={MARCA.logoEscudo} alt="" className="h-12 w-auto shrink-0" />
+        <div>
         <p className="text-lg font-bold">{d.tradeName}</p>
         <p className="text-xs text-neutral-600">
           {d.legalName} · CUIT {d.cuit}
@@ -41,8 +65,9 @@ function Membrete({ op, titulo, derecha }: { op: Op; titulo: string; derecha?: R
           {[d.addressStreet, d.addressCity, d.province].filter(Boolean).join(", ")}
           {d.phone ? ` · Tel. ${d.phone}` : ""}
         </p>
+        </div>
       </div>
-      <div className="text-right">
+      <div className="shrink-0 text-right">
         <p className="text-sm font-bold tracking-wide uppercase">{titulo}</p>
         {derecha}
       </div>
@@ -109,7 +134,7 @@ export function Boleto({ op }: { op: Op }) {
   const b = op.buyer;
 
   return (
-    <Hoja>
+    <Hoja pie={<PieMarca op={op} />}>
       <Membrete op={op} titulo="Boleto de compraventa" derecha={<p className="text-xs">Operación N° {op.number}</p>} />
       <h1 className="mb-5 text-center text-base font-bold tracking-widest">BOLETO DE COMPRAVENTA DE AUTOMOTOR</h1>
 
@@ -257,7 +282,7 @@ export function Recibo({ op, reciboId }: { op: Op; reciboId: string }) {
   );
 
   return (
-    <Hoja className="grid gap-8">
+    <Hoja className="grid gap-8" pie={<PieMarca op={op} />}>
       {cuerpo("ORIGINAL")}
       <div className="border-t-2 border-dashed border-neutral-300 text-center font-sans text-[10px] text-neutral-400">✂ cortar aquí</div>
       {cuerpo("DUPLICADO")}
@@ -282,7 +307,7 @@ export function Factura({ op }: { op: Op }) {
   const d = op.dealership;
   if (!op.invoiceType) {
     return (
-      <Hoja>
+      <Hoja pie={<PieMarca op={op} />}>
         <Membrete op={op} titulo="Factura" />
         <p>
           En esta operación vende un particular ({op.seller?.fullName}). La venta entre particulares no lleva factura del auto: se instrumenta
@@ -299,7 +324,7 @@ export function Factura({ op }: { op: Op }) {
   const pendiente = !op.afipCae;
 
   return (
-    <Hoja className="relative overflow-hidden font-sans text-[10pt]">
+    <Hoja className="relative overflow-hidden font-sans text-[10pt]" pie={<PieMarca op={op} />}>
       {pendiente && (
         <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
           <p className="-rotate-30 text-center text-4xl font-black tracking-widest text-red-500/15">
@@ -456,7 +481,7 @@ export function DatosF08({ op }: { op: Op }) {
   const b = op.buyer;
 
   return (
-    <Hoja className="font-sans text-[10pt]">
+    <Hoja className="font-sans text-[10pt] print:text-[8.5pt]" pie={<PieMarca op={op} />}>
       <Membrete op={op} titulo="Datos para Formulario 08" derecha={<p className="text-xs">Operación N° {op.number}</p>} />
       <p className="mb-4 rounded bg-neutral-100 p-2 text-xs">
         Hoja de ayuda con todos los datos que pide el Formulario 08 (o el 08 Digital). El formulario oficial se adquiere en el Registro
@@ -500,8 +525,8 @@ function Tabla({ titulo, filas }: { titulo: string; filas: [string, string][] })
       <tbody>
         {filas.map(([k, v]) => (
           <tr key={k} className="border-b border-neutral-300">
-            <th className="w-1/3 bg-neutral-50 px-2 py-1.5 print:py-1 text-left font-medium text-neutral-600">{k}</th>
-            <td className="px-2 py-1.5 font-mono print:py-1">{v || <span className="text-neutral-300">________________</span>}</td>
+            <th className="w-1/3 bg-neutral-50 px-2 py-1.5 print:py-[3px] text-left font-medium text-neutral-600">{k}</th>
+            <td className="px-2 py-1.5 font-mono print:py-[3px]">{v || <span className="text-neutral-300">________________</span>}</td>
           </tr>
         ))}
       </tbody>
@@ -528,7 +553,7 @@ export function ActaEntrega({ op }: { op: Op }) {
   const v = op.vehicle;
   const fecha = op.deliveryDate ?? null;
   return (
-    <Hoja>
+    <Hoja pie={<PieMarca op={op} />}>
       <Membrete op={op} titulo="Acta de entrega" derecha={<p className="text-xs">Operación N° {op.number}</p>} />
       <h1 className="mb-5 text-center text-base font-bold tracking-widest">ACTA DE ENTREGA DE VEHÍCULO</h1>
       <p className="text-justify">

@@ -43,7 +43,7 @@ export function RegisterForm() {
   });
 
   return (
-    <Card className="w-full max-w-sm">
+    <Card className="w-full max-w-sm border-0 shadow-2xl shadow-black/40">
       <CardHeader>
         <CardTitle className="text-xl">Crear cuenta</CardTitle>
         <CardDescription>Creá el acceso para administrar las ventas de tu concesionaria.</CardDescription>
