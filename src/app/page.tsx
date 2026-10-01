@@ -8,7 +8,9 @@ import { MARCA, linkWhatsapp } from "@/lib/marca";
 import { prisma } from "@/lib/prisma";
 import { formatKm } from "@/lib/utils";
 import { FUEL_LABELS } from "@/types/vehicle";
+import { CarruselAutos, type AutoCarrusel } from "@/components/inicio/carrusel-autos";
 import { VideoMarco } from "@/components/inicio/video-marco";
+import { AUTOS_EJEMPLO } from "@/lib/autos-ejemplo";
 
 const CONSULTA_GENERAL = linkWhatsapp(`¡Hola! Vengo de la página de ${MARCA.nombre} y quería hacer una consulta.`);
 
@@ -20,15 +22,16 @@ const SERVICIOS = [
 ];
 
 /** Portada pública para clientes: quiénes somos, video y autos disponibles. */
-export default async function Inicio() {
-  const [session, agencia] = await Promise.all([auth(), getAgencia()]);
+export default async function Inicio({ searchParams }: PageProps<"/">) {
+  const [session, agencia, params] = await Promise.all([auth(), getAgencia(), searchParams]);
+  const muestra = params.muestra === "1";
   // Solo los autos de la agencia: otras cuentas no pueden publicar en esta portada.
-  const autos = !agencia
+  const stock = muestra || !agencia
     ? []
     : await prisma.vehicle.findMany({
         where: { dealershipId: agencia.id, status: { notIn: ["SOLD", "REJECTED", "PAUSED"] }, photos: { some: {} } },
         orderBy: { createdAt: "desc" },
-        take: 9,
+        take: 24,
         select: {
           id: true,
           brand: true,
@@ -37,9 +40,27 @@ export default async function Inicio() {
           year: true,
           mileageKm: true,
           fuelType: true,
+          bodyType: true,
           photos: { select: FOTO_SELECT, orderBy: [{ isCover: "desc" }, { order: "asc" }], take: 1 },
         },
       });
+  const autos: AutoCarrusel[] = muestra
+    ? AUTOS_EJEMPLO.map((a) => ({
+        ...a,
+        whatsapp: linkWhatsapp(`¡Hola! Me interesa el ${a.titulo} que vi en la página. ¿Sigue disponible?`),
+      }))
+    : stock.map((a) => ({
+        id: a.id,
+        titulo: `${a.brand} ${a.model}`,
+        detalle: [a.version, a.year, a.mileageKm > 0 ? formatKm(a.mileageKm) : "0 km", FUEL_LABELS[a.fuelType]]
+          .filter(Boolean)
+          .join(" · "),
+        etiqueta: a.mileageKm === 0 ? "0 km" : a.bodyType,
+        foto: fotoUrl(a.photos[0]),
+        whatsapp: linkWhatsapp(
+          `¡Hola! Me interesa el ${a.brand} ${a.model}${a.version ? ` ${a.version}` : ""} ${a.year} que vi en la página. ¿Sigue disponible?`
+        ),
+      }));
   const esEquipo = session?.user?.role === "DEALER_OWNER" || session?.user?.role === "DEALER_STAFF";
 
   return (
@@ -145,38 +166,12 @@ export default async function Inicio() {
       {autos.length > 0 && (
         <section id="autos" className="mx-auto max-w-6xl px-4 py-20 sm:px-6">
           <Titulo antetitulo="Usados seleccionados" titulo="Autos disponibles" />
-          <div className="mt-10 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {autos.map((a) => (
-              <article key={a.id} className="overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03]">
-                <div className="relative aspect-[4/3] bg-black/40">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={fotoUrl(a.photos[0])} alt={`${a.brand} ${a.model}`} className="size-full object-cover" loading="lazy" />
-                </div>
-                <div className="flex items-end justify-between gap-3 p-4">
-                  <div className="min-w-0">
-                    <p className="truncate text-lg font-bold">
-                      {a.brand} {a.model}
-                    </p>
-                    <p className="truncate text-sm text-white/60">
-                      {[a.version, a.year, a.mileageKm > 0 ? formatKm(a.mileageKm) : "0 km", FUEL_LABELS[a.fuelType]]
-                        .filter(Boolean)
-                        .join(" · ")}
-                    </p>
-                  </div>
-                  <a
-                    href={linkWhatsapp(
-                      `¡Hola! Me interesa el ${a.brand} ${a.model}${a.version ? ` ${a.version}` : ""} ${a.year} que vi en la página. ¿Sigue disponible?`
-                    )}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="inline-flex h-10 shrink-0 items-center gap-1.5 rounded-full bg-[#d4ad55] px-4 text-sm font-bold text-[#0b1520] transition hover:brightness-110"
-                  >
-                    Consultar
-                  </a>
-                </div>
-              </article>
-            ))}
-          </div>
+          {muestra && (
+            <p className="mx-auto mt-4 w-fit rounded-full border border-[#d4ad55]/40 bg-[#d4ad55]/10 px-4 py-1.5 text-center text-xs font-semibold text-[#d4ad55]">
+              Vista de muestra: estos autos son ejemplos
+            </p>
+          )}
+          <CarruselAutos autos={autos} />
         </section>
       )}
 
