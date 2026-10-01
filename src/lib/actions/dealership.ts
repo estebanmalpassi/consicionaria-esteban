@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 
 import { auth } from "@/lib/auth";
+import { getAgencia } from "@/lib/dealer";
 import { prisma } from "@/lib/prisma";
 import {
   dealershipOnboardingSchema,
@@ -21,6 +22,12 @@ export async function submitOnboardingAction(
   const session = await auth();
   if (!session?.user || session.user.role !== "DEALER_OWNER") {
     return { ok: false, error: "Necesitás una cuenta de concesionaria para continuar." };
+  }
+
+  // Solo el dueño de la agencia edita sus datos; nadie puede crear otra concesionaria.
+  const agencia = await getAgencia();
+  if (agencia && agencia.ownerId !== session.user.id) {
+    return { ok: false, error: "Solo el dueño de la agencia puede cambiar estos datos." };
   }
 
   const parsed = dealershipOnboardingSchema.safeParse(raw);

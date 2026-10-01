@@ -11,6 +11,7 @@ export const registerSchema = z
     email: z.string().email("Ingresá un email válido."),
     password: z.string().min(8, "La contraseña debe tener al menos 8 caracteres."),
     confirmPassword: z.string(),
+    codigo: z.string().trim().min(1, "Ingresá el código de invitación."),
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: "Las contraseñas no coinciden.",

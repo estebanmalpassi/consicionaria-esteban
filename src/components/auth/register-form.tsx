@@ -46,10 +46,15 @@ export function RegisterForm() {
     <Card className="w-full max-w-sm border-0 shadow-2xl shadow-black/40">
       <CardHeader>
         <CardTitle className="text-xl">Crear cuenta</CardTitle>
-        <CardDescription>Creá el acceso para administrar las ventas de tu concesionaria.</CardDescription>
+        <CardDescription>Solo para el equipo de la agencia. Necesitás el código de invitación.</CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={onSubmit} className="grid gap-4">
+          <div className="grid gap-1.5">
+            <Label htmlFor="codigo">Código de invitación</Label>
+            <Input id="codigo" autoComplete="off" autoCapitalize="none" {...register("codigo")} />
+            {errors.codigo && <p className="text-destructive text-xs">{errors.codigo.message}</p>}
+          </div>
           <div className="grid gap-1.5">
             <Label htmlFor="name">Nombre completo</Label>
             <Input id="name" autoComplete="name" {...register("name")} />

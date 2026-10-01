@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ArrowDown, BadgeCheck, CarFront, FileCheck2, Handshake, MapPin, Sparkles } from "lucide-react";
 
 import { auth } from "@/lib/auth";
+import { getAgencia } from "@/lib/dealer";
 import { FOTO_SELECT, fotoUrl } from "@/lib/fotos";
 import { MARCA } from "@/lib/marca";
 import { prisma } from "@/lib/prisma";
@@ -18,24 +19,25 @@ const SERVICIOS = [
 
 /** Portada pública para clientes: quiénes somos, video y autos disponibles. */
 export default async function Inicio() {
-  const [session, autos] = await Promise.all([
-    auth(),
-    prisma.vehicle.findMany({
-      where: { status: { notIn: ["SOLD", "REJECTED", "PAUSED"] }, photos: { some: {} } },
-      orderBy: { createdAt: "desc" },
-      take: 9,
-      select: {
-        id: true,
-        brand: true,
-        model: true,
-        version: true,
-        year: true,
-        mileageKm: true,
-        fuelType: true,
-        photos: { select: FOTO_SELECT, orderBy: [{ isCover: "desc" }, { order: "asc" }], take: 1 },
-      },
-    }),
-  ]);
+  const [session, agencia] = await Promise.all([auth(), getAgencia()]);
+  // Solo los autos de la agencia: otras cuentas no pueden publicar en esta portada.
+  const autos = !agencia
+    ? []
+    : await prisma.vehicle.findMany({
+        where: { dealershipId: agencia.id, status: { notIn: ["SOLD", "REJECTED", "PAUSED"] }, photos: { some: {} } },
+        orderBy: { createdAt: "desc" },
+        take: 9,
+        select: {
+          id: true,
+          brand: true,
+          model: true,
+          version: true,
+          year: true,
+          mileageKm: true,
+          fuelType: true,
+          photos: { select: FOTO_SELECT, orderBy: [{ isCover: "desc" }, { order: "asc" }], take: 1 },
+        },
+      });
   const esEquipo = session?.user?.role === "DEALER_OWNER" || session?.user?.role === "DEALER_STAFF";
 
   return (
