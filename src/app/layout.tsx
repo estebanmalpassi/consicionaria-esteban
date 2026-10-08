@@ -3,6 +3,7 @@ import { Geist, Geist_Mono, Montserrat } from "next/font/google";
 import "./globals.css";
 
 import { MARCA } from "@/lib/marca";
+import { SCRIPT_TEMA } from "@/lib/tema";
 
 import { AuthProvider } from "@/components/providers/auth-provider";
 
@@ -42,8 +43,13 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="es"
+      suppressHydrationWarning
       className={`${geistSans.variable} ${geistMono.variable} ${montserrat.variable} h-full antialiased`}
     >
+      <head>
+        {/* Aplica el modo oscuro elegido en Ajustes antes de pintar (sin "flash" blanco). */}
+        <script dangerouslySetInnerHTML={{ __html: SCRIPT_TEMA }} />
+      </head>
       <body className="min-h-full flex flex-col">
         <AuthProvider>
           <main className="flex flex-1 flex-col">{children}</main>

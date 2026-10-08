@@ -27,7 +27,7 @@ export default async function ImprimirPage({ params, searchParams }: PageProps<"
           <Link href={`/dealer/operaciones/${op.id}`} className="text-muted-foreground inline-flex items-center gap-1 text-sm">
             <ArrowLeft className="size-4" /> Operación N° {op.number}
           </Link>
-          <div className="flex flex-1 gap-1 overflow-x-auto">
+          <div className="order-last flex basis-full gap-1 overflow-x-auto sm:order-none sm:flex-1 sm:basis-auto">
             {pestañas.map((d) => (
               <Link
                 key={d.id}

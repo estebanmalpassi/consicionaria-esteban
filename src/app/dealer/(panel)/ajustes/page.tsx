@@ -3,6 +3,7 @@ import Link from "next/link";
 import { requireDealer } from "@/lib/dealer";
 import { prisma } from "@/lib/prisma";
 import { AccionesEmpleado } from "@/components/dealer/acciones-empleado";
+import { SelectorTema } from "@/components/dealer/selector-tema";
 
 export default async function AjustesPage() {
   const { dealership: d, esDueno } = await requireDealer();
@@ -16,6 +17,16 @@ export default async function AjustesPage() {
   return (
     <div className="mx-auto grid max-w-3xl grid-cols-1 gap-6 px-4 py-8 sm:px-6">
       <h1 className="text-2xl font-bold tracking-tight">Ajustes</h1>
+
+      <section className="bg-card grid gap-3 rounded-2xl border p-5" aria-labelledby="t-apariencia">
+        <div>
+          <h2 id="t-apariencia" className="font-semibold">
+            Apariencia
+          </h2>
+          <p className="text-muted-foreground text-sm">Se guarda en este celular o computadora. Los papeles para imprimir siempre salen en blanco.</p>
+        </div>
+        <SelectorTema />
+      </section>
 
       <section className="bg-card grid gap-2 rounded-2xl border p-5">
         <h2 className="font-semibold">Datos que salen en los papeles</h2>

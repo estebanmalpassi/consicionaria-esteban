@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 
 import { SiteHeader } from "@/components/layout/site-header";
+import { SeguirTemaDelSistema } from "@/components/dealer/selector-tema";
 import { MARCA } from "@/lib/marca";
 
 // El panel se puede instalar en el celular y abrirse como una app.
@@ -17,6 +18,7 @@ export const viewport: Viewport = {
 export default function DealerLayout({ children }: LayoutProps<"/dealer">) {
   return (
     <>
+      <SeguirTemaDelSistema />
       <SiteHeader />
       {children}
     </>
