@@ -3,6 +3,7 @@ import { Camera, Car, Plus, Search } from "lucide-react";
 
 import { requireDealer } from "@/lib/dealer";
 import { FOTO_SELECT, fotoUrl } from "@/lib/fotos";
+import { apartadosDe } from "@/lib/apartados";
 import { resultadoAuto } from "@/lib/gastos";
 import { prisma } from "@/lib/prisma";
 import { cn, formatArs, formatKm } from "@/lib/utils";
@@ -39,16 +40,16 @@ export default async function StockPage({ searchParams }: PageProps<"/dealer/sto
 
   const where = {
     dealershipId: dealership.id,
-    ...(filtro === "disponibles" && { status: { not: "SOLD" as const } }),
-    ...(filtro === "reservados" && { sales: { some: { status: "RESERVADA" as const } } }),
+    ...(filtro === "disponibles" && { status: { notIn: ["SOLD" as const, "PAUSED" as const] } }),
+    ...(filtro === "reservados" && { OR: [{ sales: { some: { status: "RESERVADA" as const } } }, { status: "PAUSED" as const }] }),
     ...(filtro === "vendidos" && { sales: { some: { status: { in: ["VENDIDA" as const, "ENTREGADA" as const] } } } }),
     ...(filtro === "sin-fotos" && { status: { not: "SOLD" as const }, photos: { none: {} } }),
     ...(q && {
-      OR: [
+      AND: [{ OR: [
         { patente: { contains: q.toUpperCase().replace(/\s/g, "") } },
         { brand: { contains: q, mode: "insensitive" as const } },
         { model: { contains: q, mode: "insensitive" as const } },
-      ],
+      ] }],
     }),
   };
 
@@ -69,6 +70,7 @@ export default async function StockPage({ searchParams }: PageProps<"/dealer/sto
     }),
     Promise.resolve(new Date()),
   ]);
+  const apartados = await apartadosDe(autos.filter((a) => a.status === "PAUSED" && !a.sales.length).map((a) => a.id));
 
   return (
     <div className="mx-auto grid max-w-6xl gap-5 px-4 py-8 sm:px-6">
@@ -128,7 +130,8 @@ export default async function StockPage({ searchParams }: PageProps<"/dealer/sto
           {autos.map((a) => {
             const foto = a.photos[0];
             const venta = a.sales[0];
-            const estado: Estado = !venta ? "disponible" : venta.status === "RESERVADA" ? "reservado" : "vendido";
+            const apartado = !venta ? apartados.get(a.id) : undefined;
+            const estado: Estado = venta ? (venta.status === "RESERVADA" ? "reservado" : "vendido") : a.status === "PAUSED" ? "reservado" : "disponible";
             const dias = diasDesde(a.createdAt, hoy);
             const precio = Number(a.priceArs);
             const gastos = a.expenses.reduce((s, g) => s + Number(g.amountArs), 0);
@@ -173,8 +176,9 @@ export default async function StockPage({ searchParams }: PageProps<"/dealer/sto
                         {dias === 0 ? "Cargado hoy" : `${dias} ${dias === 1 ? "día" : "días"}`}
                       </span>
                     )}
-                    {estado === "reservado" && Number(venta.depositArs) > 0 && <span>Seña {formatArs(Number(venta.depositArs))}</span>}
-                    {estado === "vendido" && venta.status === "ENTREGADA" && <span>Entregado</span>}
+                    {estado === "reservado" && venta && Number(venta.depositArs) > 0 && <span>Seña {formatArs(Number(venta.depositArs))}</span>}
+                    {estado === "reservado" && !venta && <span className="truncate">Apartado{apartado ? ` · ${apartado.nombre}` : ""}</span>}
+                    {estado === "vendido" && venta?.status === "ENTREGADA" && <span>Entregado</span>}
                     {r && estado === "disponible" && (
                       <span
                         className={cn(
