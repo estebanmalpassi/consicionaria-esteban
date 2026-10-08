@@ -172,6 +172,10 @@ export function FormEntrega({ saleId, km }: { saleId: string; km: number }) {
           <Entrada id="e-km" name="deliveryKm" inputMode="numeric" defaultValue={km} />
         </Campo>
       </div>
+      <p className="text-muted-foreground text-xs">
+        Un mes después de la entrega, el auto queda solo con la foto de portada para ahorrar espacio. Si vas a hacer el
+        posteo de la entrega, hacelo antes.
+      </p>
       <AvisoError>{error}</AvisoError>
       <Button type="submit" variant="trust" disabled={enviando}>
         {enviando && <Loader2 className="size-4 animate-spin" />} Marcar como entregado e imprimir acta
