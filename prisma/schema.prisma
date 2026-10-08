@@ -197,6 +197,7 @@ model Vehicle {
   swipeActions  SwipeAction[]
   invoices      Invoice[]
   sales         Sale[]
+  expenses      VehicleExpense[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -205,6 +206,23 @@ model Vehicle {
   @@index([status])
   @@index([brand, model])
   @@index([priceArs])
+}
+
+/// Gastos que la agencia le hizo al auto (chapa, cubiertas, service, VTV...).
+/// Uso interno: no se muestran en la web ni salen en boletos o recibos.
+model VehicleExpense {
+  id        String   @id @default(cuid())
+  vehicleId String
+  vehicle   Vehicle  @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+
+  category    String
+  description String?
+  amountArs   Decimal  @db.Decimal(14, 2)
+  date        DateTime @default(now())
+
+  createdAt DateTime @default(now())
+
+  @@index([vehicleId])
 }
 
 model VehiclePhoto {

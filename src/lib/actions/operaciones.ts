@@ -1,9 +1,11 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { after } from "next/server";
 import type { Prisma } from "@prisma/client";
 
 import { getDealerOrNull } from "@/lib/dealer";
+import { limpiarFotosDeEntregados } from "@/lib/limpieza-fotos";
 import { prisma } from "@/lib/prisma";
 import {
   entregaSchema,
@@ -204,6 +206,9 @@ export async function registrarEntregaAction(raw: z.input<typeof entregaSchema>)
       checklist: { ...((found.sale.checklist as Record<string, boolean>) ?? {}), entrega: true },
     },
   });
+  // Aprovecha cada entrega para achicar los autos entregados hace más de un mes (solo dejan la portada).
+  const dealershipId = found.ctx.dealership.id;
+  after(() => limpiarFotosDeEntregados(dealershipId).catch((e) => console.error("Limpieza de fotos:", e)));
   revalidatePath("/dealer", "layout");
   return { ok: true };
 }

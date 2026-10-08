@@ -29,7 +29,8 @@ las imágenes para Instagram con el diseño de la agencia.
 ```
 src/
   app/
-    page.tsx                         Portada pública para clientes (info, video, autos, WhatsApp)
+    page.tsx                         Portada pública para clientes (info, video, carrusel de autos, WhatsApp)
+                                     /?muestra=1 muestra autos de ejemplo para ver el carrusel sin stock
     (auth)/login, (auth)/register    Acceso de la concesionaria
     dealer/
       onboarding/page.tsx            Datos de la concesionaria que salen en los papeles

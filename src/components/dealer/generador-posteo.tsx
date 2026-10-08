@@ -193,6 +193,9 @@ export function GeneradorPosteo({
           <Campo label="Título" htmlFor="p-titulo">
             <Entrada id="p-titulo" value={textos.titulo} onChange={(e) => setTextos({ ...textos, titulo: e.target.value })} />
           </Campo>
+          <p className="text-muted-foreground text-xs">
+            Lo que pongas entre *asteriscos* sale en negrita, por ejemplo el nombre del comprador.
+          </p>
           <Campo label="Detalle" htmlFor="p-detalle">
             <AreaTexto id="p-detalle" rows={3} value={textos.detalle} onChange={(e) => setTextos({ ...textos, detalle: e.target.value })} />
           </Campo>
@@ -240,23 +243,6 @@ function familiaMarca() {
   return v || "Montserrat, Arial, sans-serif";
 }
 
-/** Corta el texto en líneas que entren en `ancho` (respeta los saltos de línea escritos). */
-function partirLineas(ctx: CanvasRenderingContext2D, texto: string, ancho: number) {
-  const lineas: string[] = [];
-  for (const parrafo of texto.split("\n")) {
-    let actual = "";
-    for (const palabra of parrafo.split(/\s+/).filter(Boolean)) {
-      const prueba = actual ? `${actual} ${palabra}` : palabra;
-      if (ctx.measureText(prueba).width > ancho && actual) {
-        lineas.push(actual);
-        actual = palabra;
-      } else actual = prueba;
-    }
-    if (actual) lineas.push(actual);
-  }
-  return lineas;
-}
-
 function rectRedondeado(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
   ctx.beginPath();
   ctx.moveTo(x + r, y);
@@ -278,6 +264,8 @@ async function dibujar(
   await Promise.all([
     document.fonts.load(`800 80px ${fam}`),
     document.fonts.load(`500 36px ${fam}`),
+    document.fonts.load(`400 44px ${fam}`),
+    document.fonts.load(`700 44px ${fam}`),
   ]).catch(() => undefined);
   const [foto, logo] = await Promise.all([
     fotoSrc ? cargarImagen(fotoSrc).catch(() => null) : Promise.resolve(null),
@@ -312,77 +300,126 @@ async function dibujar(
     }
   }
 
-  // Degradés para que el texto se lea sobre cualquier foto
-  const arriba = ctx.createLinearGradient(0, 0, 0, ALTO * 0.45);
-  arriba.addColorStop(0, `rgba(${AZUL}, 0.55)`);
-  arriba.addColorStop(1, `rgba(${AZUL}, 0)`);
-  ctx.fillStyle = arriba;
-  ctx.fillRect(0, 0, ANCHO, ALTO * 0.45);
-  const abajo = ctx.createLinearGradient(0, ALTO * 0.6, 0, ALTO);
-  abajo.addColorStop(0, `rgba(${AZUL}, 0)`);
-  abajo.addColorStop(1, `rgba(${AZUL}, 0.95)`);
-  ctx.fillStyle = abajo;
-  ctx.fillRect(0, ALTO * 0.6, ANCHO, ALTO * 0.4);
-
-  // Recuadro superior con antetítulo, título y detalle
-  const margen = 90;
-  const anchoPanel = ANCHO - margen * 2;
-  const anchoTexto = anchoPanel - 80;
-  ctx.textAlign = "center";
-  ctx.textBaseline = "top";
-
-  ctx.font = `800 82px ${fam}`;
-  const lineasTitulo = partirLineas(ctx, t.titulo, anchoTexto).slice(0, 2);
-  ctx.font = `500 34px ${fam}`;
-  const lineasDetalle = partirLineas(ctx, t.detalle, anchoTexto).slice(0, 4);
-  const altoAnte = t.antetitulo ? 50 : 0;
-  const altoTitulo = lineasTitulo.length * 90;
-  const altoDetalle = lineasDetalle.length ? 16 + lineasDetalle.length * 44 : 0;
-  const altoPanel = 56 + altoAnte + altoTitulo + altoDetalle + 40;
-  const yPanel = 100;
-
-  ctx.fillStyle = `rgba(${AZUL}, 0.78)`;
-  rectRedondeado(ctx, margen, yPanel, anchoPanel, altoPanel, 28);
+  // Marco: recuadro grande semitransparente, como en los posteos de la agencia.
+  // Más oscuro arriba y abajo (donde va el texto) y casi transparente en el medio (el auto).
+  const margen = 80;
+  const xMarco = margen;
+  const yMarco = 110;
+  const anchoMarco = ANCHO - margen * 2;
+  const altoMarco = ALTO - yMarco - 90;
+  ctx.fillStyle = `rgba(${AZUL}, 0.18)`;
+  ctx.fillRect(0, 0, ANCHO, ALTO);
+  const tinte = ctx.createLinearGradient(0, yMarco, 0, yMarco + altoMarco);
+  tinte.addColorStop(0, `rgba(${AZUL}, 0.86)`);
+  tinte.addColorStop(0.3, `rgba(${AZUL}, 0.42)`);
+  tinte.addColorStop(0.58, `rgba(${AZUL}, 0.3)`);
+  tinte.addColorStop(0.78, `rgba(${AZUL}, 0.78)`);
+  tinte.addColorStop(1, `rgba(${AZUL}, 0.92)`);
+  ctx.fillStyle = tinte;
+  rectRedondeado(ctx, xMarco, yMarco, anchoMarco, altoMarco, 36);
   ctx.fill();
+  ctx.strokeStyle = "rgba(255,255,255,0.14)";
+  ctx.lineWidth = 2;
+  ctx.stroke();
 
-  let y = yPanel + 50;
+  const anchoTexto = anchoMarco - 90;
+  const centro = ANCHO / 2;
+  ctx.textBaseline = "top";
   ctx.fillStyle = "#ffffff";
+
+  // Arriba: antetítulo, título grande y detalle
+  let y = yMarco + 56;
   if (t.antetitulo) {
-    ctx.font = `500 38px ${fam}`;
-    ctx.globalAlpha = 0.92;
-    ctx.fillText(t.antetitulo, ANCHO / 2, y);
-    ctx.globalAlpha = 1;
-    y += altoAnte;
+    y = escribirRico(ctx, t.antetitulo, { fam, tam: 56, peso: 500, alto: 64, max: 1 }, centro, y, anchoTexto);
+    y += 4;
   }
-  ctx.font = `800 82px ${fam}`;
-  for (const l of lineasTitulo) {
-    ctx.fillText(l, ANCHO / 2, y);
-    y += 90;
-  }
-  if (lineasDetalle.length) {
-    y += 16;
-    ctx.font = `500 34px ${fam}`;
-    ctx.globalAlpha = 0.9;
-    for (const l of lineasDetalle) {
-      ctx.fillText(l, ANCHO / 2, y);
-      y += 44;
-    }
+  y = escribirRico(ctx, t.titulo, { fam, tam: 96, peso: 800, alto: 104, max: 2 }, centro, y, anchoTexto);
+  if (t.detalle) {
+    y += 14;
+    ctx.globalAlpha = 0.95;
+    escribirRico(ctx, t.detalle, { fam, tam: 40, peso: 500, alto: 50, max: 4 }, centro, y, anchoTexto);
     ctx.globalAlpha = 1;
   }
 
-  // Escudo y texto de abajo
+  // Abajo: escudo y mensaje (los nombres entre *asteriscos* van en negrita)
   const anchoLogo = 230;
   const altoLogo = logo ? (logo.height / logo.width) * anchoLogo : 0;
-  const yLogo = ALTO - 60 - altoLogo;
+  const yLogo = yMarco + altoMarco - 50 - altoLogo;
   if (logo) ctx.drawImage(logo, (ANCHO - anchoLogo) / 2, yLogo, anchoLogo, altoLogo);
   if (t.pie) {
-    ctx.font = `500 30px ${fam}`;
-    const lineasPie = partirLineas(ctx, t.pie, ANCHO - 200).slice(0, 2);
-    let yPie = yLogo - 28 - lineasPie.length * 40;
-    ctx.fillStyle = "#ffffff";
-    for (const l of lineasPie) {
-      ctx.fillText(l, ANCHO / 2, yPie);
-      yPie += 40;
-    }
+    const estilo = { fam, tam: 44, peso: 400, alto: 54, max: 3 };
+    const lineas = lineasRicas(ctx, t.pie, estilo, anchoTexto);
+    escribirRico(ctx, t.pie, estilo, centro, yLogo - 34 - lineas.length * estilo.alto, anchoTexto);
   }
+}
+
+/* Texto con partes en negrita: "Felicitaciones *Juan Pérez* por su nueva adquisición" */
+
+interface EstiloTexto {
+  fam: string;
+  tam: number;
+  peso: number;
+  alto: number;
+  max: number;
+}
+
+type Trozo = { texto: string; negrita: boolean };
+
+function fuente(e: EstiloTexto, negrita: boolean) {
+  return `${negrita ? Math.max(e.peso, 700) : e.peso} ${e.tam}px ${e.fam}`;
+}
+
+/** Corta el texto en líneas de palabras, cada una con su peso, sin pasarse del ancho. */
+function lineasRicas(ctx: CanvasRenderingContext2D, texto: string, e: EstiloTexto, ancho: number) {
+  const lineas: Trozo[][] = [];
+  const espacio = (negrita: boolean) => {
+    ctx.font = fuente(e, negrita);
+    return ctx.measureText(" ").width;
+  };
+  for (const parrafo of texto.split("\n")) {
+    const palabras: Trozo[] = [];
+    parrafo.split("*").forEach((parte, i) => {
+      for (const p of parte.split(/\s+/).filter(Boolean)) palabras.push({ texto: p, negrita: i % 2 === 1 });
+    });
+    let actual: Trozo[] = [];
+    let anchoActual = 0;
+    for (const p of palabras) {
+      ctx.font = fuente(e, p.negrita);
+      const w = ctx.measureText(p.texto).width;
+      const sep = actual.length ? espacio(p.negrita) : 0;
+      if (actual.length && anchoActual + sep + w > ancho) {
+        lineas.push(actual);
+        actual = [p];
+        anchoActual = w;
+      } else {
+        actual.push(p);
+        anchoActual += sep + w;
+      }
+    }
+    if (actual.length) lineas.push(actual);
+  }
+  return lineas.slice(0, e.max);
+}
+
+/** Escribe el texto centrado en `cx` desde `y` y devuelve la altura donde terminó. */
+function escribirRico(ctx: CanvasRenderingContext2D, texto: string, e: EstiloTexto, cx: number, y: number, ancho: number) {
+  const lineas = lineasRicas(ctx, texto, e, ancho);
+  ctx.textAlign = "left";
+  for (const linea of lineas) {
+    const medidas = linea.map((p, i) => {
+      ctx.font = fuente(e, p.negrita);
+      return { w: ctx.measureText(p.texto).width, sep: i ? ctx.measureText(" ").width : 0 };
+    });
+    const total = medidas.reduce((a, m) => a + m.w + m.sep, 0);
+    let x = cx - total / 2;
+    linea.forEach((p, i) => {
+      ctx.font = fuente(e, p.negrita);
+      x += medidas[i].sep;
+      ctx.fillText(p.texto, x, y);
+      x += medidas[i].w;
+    });
+    y += e.alto;
+  }
+  ctx.textAlign = "center";
+  return y;
 }

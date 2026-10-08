@@ -7,8 +7,9 @@ import { Loader2 } from "lucide-react";
 import { guardarVehiculoAction } from "@/lib/actions/vehiculos";
 import { subirFoto } from "@/lib/comprimir-imagen";
 import type { VehiculoValues } from "@/lib/validations/operacion";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { AreaTexto, AvisoError, Campo, Entrada, EntradaPesos, Selector } from "@/components/dealer/campo";
+import { AreaTexto, AvisoError, Campo, Entrada, EntradaPesos } from "@/components/dealer/campo";
 import { SelectorFotos, type FotoPendiente } from "@/components/dealer/selector-fotos";
 
 export type VehiculoInicial = Partial<Record<keyof VehiculoValues, string | number | null>>;
@@ -32,16 +33,25 @@ export function CamposVehiculo({
     <div className="grid gap-4">
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <Campo label="Patente / dominio" htmlFor="patente" className="col-span-2 sm:col-span-1">
-          <Entrada
-            id="patente"
-            name="patente"
-            required
-            defaultValue={d("patente")}
-            placeholder="AB123CD"
-            autoCapitalize="characters"
-            className="font-mono tracking-widest uppercase"
-            aria-invalid={inv("patente")}
-          />
+          <div
+            className={cn(
+              "focus-within:ring-ring/50 overflow-hidden rounded-lg border-2 border-neutral-900 bg-white focus-within:ring-[3px]",
+              inv("patente") && "border-destructive"
+            )}
+          >
+            <div className="bg-[#1f4fa3] py-0.5 text-center text-[8px] font-bold tracking-[0.18em] text-white">REPÚBLICA ARGENTINA</div>
+            <input
+              id="patente"
+              name="patente"
+              required
+              defaultValue={d("patente")}
+              placeholder="AB123CD"
+              autoCapitalize="characters"
+              autoComplete="off"
+              className="h-10 w-full bg-white text-center font-mono text-xl font-bold tracking-[0.15em] text-neutral-900 uppercase outline-none placeholder:text-neutral-300"
+              aria-invalid={inv("patente")}
+            />
+          </div>
         </Campo>
         <Campo label="Marca" htmlFor="brand">
           <Entrada id="brand" name="brand" required defaultValue={d("brand")} placeholder="Toyota" aria-invalid={inv("brand")} />
@@ -61,28 +71,36 @@ export function CamposVehiculo({
         <Campo label="Color" htmlFor="color">
           <Entrada id="color" name="color" defaultValue={d("color")} placeholder="Gris plata" />
         </Campo>
-        <Campo label="Tipo" htmlFor="bodyType">
-          <Selector id="bodyType" name="bodyType" defaultValue={d("bodyType") || "Sedán"}>
-            {CARROCERIAS.map((c) => (
-              <option key={c}>{c}</option>
-            ))}
-          </Selector>
-        </Campo>
-        <Campo label="Combustible" htmlFor="fuelType">
-          <Selector id="fuelType" name="fuelType" defaultValue={d("fuelType") || "NAFTA"}>
-            <option value="NAFTA">Nafta</option>
-            <option value="DIESEL">Diésel</option>
-            <option value="GNC">Nafta / GNC</option>
-            <option value="HIBRIDO">Híbrido</option>
-            <option value="ELECTRICO">Eléctrico</option>
-          </Selector>
-        </Campo>
-        <Campo label="Caja" htmlFor="transmission">
-          <Selector id="transmission" name="transmission" defaultValue={d("transmission") || "MANUAL"}>
-            <option value="MANUAL">Manual</option>
-            <option value="AUTOMATICA">Automática</option>
-          </Selector>
-        </Campo>
+        <GrupoOpciones
+          className="col-span-2 sm:col-span-4"
+          etiqueta="Tipo"
+          name="bodyType"
+          defaultValue={d("bodyType") || "Sedán"}
+          opciones={CARROCERIAS.map((c) => ({ valor: c, texto: c }))}
+        />
+        <GrupoOpciones
+          className="col-span-2"
+          etiqueta="Combustible"
+          name="fuelType"
+          defaultValue={d("fuelType") || "NAFTA"}
+          opciones={[
+            { valor: "NAFTA", texto: "Nafta" },
+            { valor: "DIESEL", texto: "Diésel" },
+            { valor: "GNC", texto: "Nafta / GNC" },
+            { valor: "HIBRIDO", texto: "Híbrido" },
+            { valor: "ELECTRICO", texto: "Eléctrico" },
+          ]}
+        />
+        <GrupoOpciones
+          className="col-span-2"
+          etiqueta="Caja"
+          name="transmission"
+          defaultValue={d("transmission") || "MANUAL"}
+          opciones={[
+            { valor: "MANUAL", texto: "Manual" },
+            { valor: "AUTOMATICA", texto: "Automática" },
+          ]}
+        />
         <Campo label="N° de motor" htmlFor="engineNumber" hint="Figura en la cédula verde.">
           <Entrada id="engineNumber" name="engineNumber" defaultValue={d("engineNumber")} className="font-mono uppercase" />
         </Campo>
@@ -100,6 +118,49 @@ export function CamposVehiculo({
             <EntradaPesos id="purchasePriceArs" name="purchasePriceArs" defaultValue={inicial.purchasePriceArs} />
           </Campo>
         )}
+      </div>
+    </div>
+  );
+}
+
+/** Opciones de un toque (en vez de una lista desplegable). Guarda el valor en un input oculto. */
+function GrupoOpciones({
+  etiqueta,
+  name,
+  defaultValue,
+  opciones,
+  className,
+}: {
+  etiqueta: string;
+  name: string;
+  defaultValue: string;
+  opciones: { valor: string; texto: string }[];
+  className?: string;
+}) {
+  const [valor, setValor] = React.useState(defaultValue);
+  const id = React.useId();
+  return (
+    <div className={cn("grid gap-1.5", className)}>
+      <span id={id} className="text-sm font-medium">
+        {etiqueta}
+      </span>
+      <input type="hidden" name={name} value={valor} />
+      <div role="radiogroup" aria-labelledby={id} className="flex flex-wrap gap-1.5">
+        {opciones.map((o) => (
+          <button
+            key={o.valor}
+            type="button"
+            role="radio"
+            aria-checked={valor === o.valor}
+            onClick={() => setValor(o.valor)}
+            className={cn(
+              "h-10 rounded-full border px-4 text-sm font-medium transition-colors",
+              valor === o.valor ? "bg-primary text-primary-foreground border-primary" : "bg-background hover:bg-accent"
+            )}
+          >
+            {o.texto}
+          </button>
+        ))}
       </div>
     </div>
   );
@@ -156,16 +217,43 @@ export function FormularioVehiculo({ vehicleId, inicial }: { vehicleId?: string;
     router.refresh();
   };
 
+  const alta = !vehicleId;
+  const [paso, setPaso] = React.useState<0 | 1>(alta ? 0 : 1);
+  const irA = (p: 0 | 1) => {
+    setPaso(p);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
   return (
-    <form onSubmit={onSubmit} className="grid gap-8">
-      {!vehicleId && (
-        <section className="grid gap-3">
-          <h2 className="font-semibold">1. Fotos</h2>
+    <form onSubmit={onSubmit} className="grid gap-6">
+      {alta && (
+        <div className="grid grid-cols-2 gap-2" role="tablist" aria-label="Pasos para cargar el auto">
+          {(["Fotos", "Datos"] as const).map((nombre, i) => (
+            <button
+              key={nombre}
+              type="button"
+              role="tab"
+              aria-selected={paso === i}
+              onClick={() => irA(i as 0 | 1)}
+              className={cn("grid gap-1.5 text-left text-sm font-semibold", paso === i ? "text-foreground" : "text-muted-foreground")}
+            >
+              <span className={cn("h-1 rounded-full", paso >= i ? "bg-gold" : "bg-muted")} />
+              {i + 1} · {nombre}
+              {i === 0 && fotos.length > 0 && <span className="text-muted-foreground text-xs font-normal">{fotos.length} cargadas</span>}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {alta && (
+        <section className="grid gap-3" hidden={paso !== 0}>
           <SelectorFotos fotos={fotos} onChange={setFotos} />
+          <p className="text-muted-foreground text-xs">La primera foto queda de portada. Después podés sumar o cambiar fotos desde la ficha del auto.</p>
         </section>
       )}
-      <section className="grid gap-3">
-        <h2 className="font-semibold">{vehicleId ? "Datos del auto" : "2. Datos del auto"}</h2>
+
+      <section className="grid gap-3" hidden={paso !== 1}>
+        {!alta && <h2 className="font-semibold">Datos del auto</h2>}
         <CamposVehiculo inicial={inicial} errorEn={error?.field} />
         <Campo label="Descripción / observaciones" htmlFor="description">
           <AreaTexto id="description" name="description" defaultValue={(inicial?.description as string) ?? ""} placeholder="Único dueño, service oficial, cubiertas nuevas…" />
@@ -174,18 +262,30 @@ export function FormularioVehiculo({ vehicleId, inicial }: { vehicleId?: string;
 
       <AvisoError>{error?.msg}</AvisoError>
 
-      <div className="bg-background/90 sticky bottom-16 z-10 -mx-4 border-t px-4 py-3 backdrop-blur md:bottom-0">
-        <Button type="submit" size="lg" className="h-12 w-full text-base" disabled={!!estado}>
-          {estado ? (
-            <>
-              <Loader2 className="size-4 animate-spin" /> {estado}
-            </>
-          ) : vehicleId ? (
-            "Guardar cambios"
-          ) : (
-            "Guardar auto en el stock"
-          )}
-        </Button>
+      {/* En el celular la barra queda arriba del botón "+" de la navegación, sin taparlo. */}
+      <div className="bg-background/95 sticky bottom-16 z-10 -mx-4 flex gap-2 border-t px-4 pt-3 pb-9 backdrop-blur md:bottom-0 md:pb-3">
+        {alta && paso === 1 && (
+          <Button type="button" variant="outline" size="lg" className="h-12" onClick={() => irA(0)}>
+            Atrás
+          </Button>
+        )}
+        {alta && paso === 0 ? (
+          <Button type="button" size="lg" className="h-12 flex-1 text-base" onClick={() => irA(1)}>
+            {fotos.length ? "Siguiente: datos del auto" : "Seguir sin fotos"}
+          </Button>
+        ) : (
+          <Button type="submit" size="lg" className="h-12 flex-1 text-base" disabled={!!estado}>
+            {estado ? (
+              <>
+                <Loader2 className="size-4 animate-spin" /> {estado}
+              </>
+            ) : vehicleId ? (
+              "Guardar cambios"
+            ) : (
+              "Guardar auto en el stock"
+            )}
+          </Button>
+        )}
       </div>
     </form>
   );

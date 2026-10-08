@@ -10,6 +10,7 @@ import { FUEL_LABELS, TRANSMISSION_LABELS } from "@/types/vehicle";
 import { Button } from "@/components/ui/button";
 import { BorrarVehiculo, CompartirFicha } from "@/components/dealer/acciones-vehiculo";
 import { FormularioVehiculo } from "@/components/dealer/formulario-vehiculo";
+import { GastosAuto } from "@/components/dealer/gastos-auto";
 import { GaleriaVehiculo } from "@/components/dealer/galeria-vehiculo";
 
 export default async function FichaAutoPage({ params }: PageProps<"/dealer/stock/[id]">) {
@@ -20,6 +21,7 @@ export default async function FichaAutoPage({ params }: PageProps<"/dealer/stock
     include: {
       photos: { select: FOTO_SELECT, orderBy: [{ isCover: "desc" }, { order: "asc" }] },
       sales: { where: { status: { not: "ANULADA" } }, select: { id: true, number: true }, take: 1 },
+      expenses: { orderBy: { date: "asc" }, select: { id: true, category: true, description: true, amountArs: true } },
     },
   });
   if (!auto) notFound();
@@ -58,14 +60,7 @@ export default async function FichaAutoPage({ params }: PageProps<"/dealer/stock
           </div>
           <div className="bg-card rounded-2xl border p-4">
             <p className="text-3xl font-bold tabular-nums">{formatArs(precio)}</p>
-            {costo !== null && (
-              <p className="text-muted-foreground mt-1 text-sm">
-                Costo {formatArs(costo)} · margen{" "}
-                <b className={precio - costo >= 0 ? "text-trust" : "text-destructive"}>
-                  {formatArs(precio - costo)} ({costo > 0 ? Math.round(((precio - costo) / costo) * 100) : 0}%)
-                </b>
-              </p>
-            )}
+            <p className="text-muted-foreground mt-1 text-xs">Precio de venta. Los costos y la ganancia están más abajo.</p>
           </div>
 
           {venta ? (
@@ -96,6 +91,13 @@ export default async function FichaAutoPage({ params }: PageProps<"/dealer/stock
           )}
         </div>
       </div>
+
+      <GastosAuto
+        vehicleId={auto.id}
+        precioVenta={precio}
+        precioCompra={costo}
+        gastos={auto.expenses.map((g) => ({ ...g, amountArs: Number(g.amountArs) }))}
+      />
 
       <details className="bg-card group rounded-2xl border p-4 sm:p-6">
         <summary className="cursor-pointer font-semibold">Editar datos del auto</summary>
