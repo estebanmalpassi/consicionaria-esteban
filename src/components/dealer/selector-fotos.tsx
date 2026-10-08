@@ -157,9 +157,11 @@ function Casillero({
       <button
         type="button"
         onClick={() => ref.current?.click()}
-        className="border-input hover:border-primary hover:text-primary text-muted-foreground bg-muted/40 flex aspect-[4/3] flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed transition"
+        aria-label={`Sacar foto: ${toma}`}
+        className="border-input hover:border-primary hover:text-primary text-muted-foreground bg-muted/40 relative flex aspect-[4/3] flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed transition"
       >
-        <Camera className="size-5" />
+        <IconoToma toma={toma} />
+        <Camera className="absolute right-1.5 bottom-1.5 size-3.5 opacity-60" />
       </button>
       <span className="text-muted-foreground truncate text-center text-[11px]">{toma}</span>
       <input
@@ -174,6 +176,61 @@ function Casillero({
         }}
       />
     </div>
+  );
+}
+
+/** Dibujito de cada toma, para saber de un vistazo qué foto va en cada casillero. */
+function IconoToma({ toma }: { toma: string }) {
+  const trazos: Record<string, React.ReactNode> = {
+    "Frente 3/4": (
+      <>
+        <path d="M6 25h46l2-6-8-3-7-7H20l-7 7-6 2z" />
+        <path d="M21 10l-4 6h18l-3-6M38 16h8" />
+        <circle cx="16" cy="25" r="4" />
+        <circle cx="43" cy="25" r="4" />
+        <path d="M50 19h3" />
+      </>
+    ),
+    Lateral: (
+      <>
+        <path d="M4 24h52M8 24v-5l8-2 7-7h16l9 7 6 1v6" />
+        <path d="M24 11v6M16 17h32" />
+        <circle cx="17" cy="24" r="4.5" />
+        <circle cx="44" cy="24" r="4.5" />
+      </>
+    ),
+    Trasera: (
+      <>
+        <path d="M12 27V15l5-7h26l5 7v12z" />
+        <path d="M18 14l3-4h18l3 4zM12 20h7M41 20h7M24 21h12" />
+        <path d="M14 27v3M46 27v3" />
+      </>
+    ),
+    Interior: (
+      <>
+        <circle cx="30" cy="17" r="11" />
+        <circle cx="30" cy="17" r="3" />
+        <path d="M30 20v8M27.2 15.8 19.6 12M32.8 15.8l7.6-3.8" />
+      </>
+    ),
+    "Tablero / km": (
+      <>
+        <path d="M13 26a17 17 0 1 1 34 0" />
+        <path d="M30 26l8-10M17 21l3 1M43 21l-3 1M22 13l2 2.5M38 13l-2 2.5M30 9v3" />
+        <circle cx="30" cy="26" r="1.5" />
+      </>
+    ),
+    Motor: (
+      <>
+        <rect x="16" y="11" width="26" height="15" rx="2" />
+        <path d="M22 11V7h14v4M42 15h5v7h-5M16 17h-5v4h5M24 26v3M34 26v3M21 16h16" />
+      </>
+    ),
+  };
+  return (
+    <svg viewBox="0 0 60 34" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden className="h-8 w-14">
+      {trazos[toma] ?? <path d="M4 24h52M10 24l6-9h22l8 9" />}
+    </svg>
   );
 }
 
