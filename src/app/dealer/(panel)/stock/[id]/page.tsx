@@ -11,6 +11,8 @@ import { Button } from "@/components/ui/button";
 import { BorrarVehiculo, CompartirFicha } from "@/components/dealer/acciones-vehiculo";
 import { FormularioVehiculo } from "@/components/dealer/formulario-vehiculo";
 import { GastosAuto } from "@/components/dealer/gastos-auto";
+import { ReservaAuto } from "@/components/dealer/reserva-auto";
+import { apartadosDe } from "@/lib/apartados";
 import { GaleriaVehiculo } from "@/components/dealer/galeria-vehiculo";
 
 export default async function FichaAutoPage({ params }: PageProps<"/dealer/stock/[id]">) {
@@ -26,6 +28,7 @@ export default async function FichaAutoPage({ params }: PageProps<"/dealer/stock
   });
   if (!auto) notFound();
 
+  const apartado = auto.status === "PAUSED" && !auto.sales[0] ? (await apartadosDe([auto.id])).get(auto.id) ?? null : null;
   const precio = Number(auto.priceArs);
   const costo = auto.purchasePriceArs ? Number(auto.purchasePriceArs) : null;
   const venta = auto.sales[0];
@@ -70,11 +73,24 @@ export default async function FichaAutoPage({ params }: PageProps<"/dealer/stock
               </Link>
             </Button>
           ) : (
-            <Button asChild size="lg" className="h-12 text-base">
-              <Link href={`/dealer/operaciones/nueva?auto=${auto.id}`}>
-                <FileSignature className="size-4" /> Vender este auto
-              </Link>
-            </Button>
+            <>
+              <Button asChild size="lg" className="h-12 text-base">
+                <Link href={`/dealer/operaciones/nueva?auto=${auto.id}`}>
+                  <FileSignature className="size-4" /> Vender este auto
+                </Link>
+              </Button>
+              <ReservaAuto
+                vehicleId={auto.id}
+                apartado={
+                  apartado && {
+                    nombre: apartado.nombre,
+                    telefono: apartado.telefono,
+                    nota: apartado.nota,
+                    desde: apartado.desde.toLocaleDateString("es-AR", { day: "numeric", month: "numeric", timeZone: "America/Argentina/Cordoba" }),
+                  }
+                }
+              />
+            </>
           )}
           <Button asChild variant="outline" size="lg" className="border-gold/60 h-12">
             <Link href={`/dealer/stock/${auto.id}/posteo`}>

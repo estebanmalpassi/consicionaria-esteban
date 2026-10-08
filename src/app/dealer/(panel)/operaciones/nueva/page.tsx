@@ -5,7 +5,8 @@ import { AsistenteOperacion } from "@/components/dealer/asistente-operacion";
 
 export default async function NuevaOperacionPage({ searchParams }: PageProps<"/dealer/operaciones/nueva">) {
   const { dealership } = await requireDealer();
-  const { auto } = (await searchParams) as { auto?: string };
+  const { auto, reserva } = (await searchParams) as { auto?: string; reserva?: string };
+  const modoReserva = reserva === "1";
 
   const autos = await prisma.vehicle.findMany({
     where: { dealershipId: dealership.id, status: { not: "SOLD" } },
@@ -16,11 +17,12 @@ export default async function NuevaOperacionPage({ searchParams }: PageProps<"/d
   return (
     <div className="mx-auto grid max-w-6xl gap-6 px-4 py-8 sm:px-6">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">Nueva venta</h1>
+        <h1 className="text-2xl font-bold tracking-tight">{modoReserva ? "Reservar con seña" : "Nueva venta"}</h1>
         <p className="text-muted-foreground text-sm">Completá 4 pasos y la app arma el boleto, el recibo y los datos del 08.</p>
       </div>
       <AsistenteOperacion
         autoInicial={autos.some((a) => a.id === auto) ? auto : undefined}
+        modoReserva={modoReserva}
         concesionaria={{
           tradeName: dealership.tradeName,
           legalName: dealership.legalName,

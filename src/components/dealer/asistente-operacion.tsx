@@ -49,10 +49,13 @@ export function AsistenteOperacion({
   autos: autosIniciales,
   concesionaria,
   autoInicial,
+  modoReserva = false,
 }: {
   autos: AutoDisponible[];
   concesionaria: Concesionaria;
   autoInicial?: string;
+  /** Reserva con seña: la seña es obligatoria y el auto queda reservado hasta que pague el saldo. */
+  modoReserva?: boolean;
 }) {
   const router = useRouter();
   const [paso, setPaso] = React.useState(autoInicial ? 1 : 0);
@@ -141,6 +144,10 @@ export function AsistenteOperacion({
   };
 
   const confirmar = async () => {
+    if (modoReserva && (!sena || sena >= (precio ?? 0))) {
+      setError({ msg: "Para reservar, cargá la seña: tiene que ser mayor a cero y menor al precio total." });
+      return;
+    }
     setEnviando(true);
     setError(null);
     const res = await crearOperacionAction({
@@ -173,6 +180,12 @@ export function AsistenteOperacion({
   return (
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_380px] lg:items-start">
       <div className="grid min-w-0 grid-cols-1 gap-6">
+        {modoReserva && (
+          <p className="rounded-xl border border-blue-300 bg-blue-50 px-4 py-3 text-sm text-blue-950 dark:border-blue-900 dark:bg-blue-950/40 dark:text-blue-100">
+            <b>Reserva con seña.</b> Completá los datos del comprador y, en el último paso, el monto de la seña. Sale el boleto y
+            el recibo de la seña, y el auto queda <b>reservado</b> hasta que pague el saldo.
+          </p>
+        )}
         {/* Progreso */}
         <ol className="grid grid-cols-4 gap-2">
           {PASOS.map((p, i) => {
@@ -298,7 +311,12 @@ export function AsistenteOperacion({
                       ))}
                     </Selector>
                   </Campo>
-                  <Campo label="Seña / entrega hoy" htmlFor="sena" hint="Dejalo vacío si todavía no pagó nada." className="col-span-2 sm:col-span-1">
+                  <Campo
+                    label={modoReserva ? "Seña (obligatoria para reservar)" : "Seña / entrega hoy"}
+                    htmlFor="sena"
+                    hint={modoReserva ? "Lo que deja hoy para reservar el auto." : "Dejalo vacío si todavía no pagó nada."}
+                    className="col-span-2 sm:col-span-1"
+                  >
                     <EntradaPesos id="sena" value={sena} onValueChange={setSena} />
                   </Campo>
                 </div>
