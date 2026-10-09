@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Check, Copy, Download, ImagePlus, Loader2, Share2 } from "lucide-react";
+import { Check, Copy, Crosshair, Download, ImagePlus, Loader2, Move, Share2 } from "lucide-react";
 
 import { MARCA } from "@/lib/marca";
 import { cn } from "@/lib/utils";
@@ -26,6 +26,24 @@ const ANCHO = 1080;
 const ALTO = 1350;
 const AZUL = "17, 31, 46";
 
+/** Cómo está ubicada la foto: corrimiento en píxeles del posteo y acercamiento (1 = sin zoom). */
+interface Encuadre {
+  x: number;
+  y: number;
+  zoom: number;
+}
+
+const ENCUADRE_INICIAL: Encuadre = { x: 0, y: 0, zoom: 1 };
+const ZOOM_MAX = 3;
+
+/** Lo que hace falta para dibujar: se carga una vez por foto y después se redibuja al instante. */
+interface Recursos {
+  src: string | null;
+  foto: HTMLImageElement | null;
+  logo: HTMLImageElement | null;
+  fam: string;
+}
+
 /**
  * Arma una imagen con el estilo de los posteos de la agencia: foto a sangre,
  * recuadro azul semitransparente con el texto en blanco y el escudo abajo.
@@ -46,27 +64,97 @@ export function GeneradorPosteo({
   const [textos, setTextos] = React.useState(() => ({ ...plantillas[0] }));
   const [fotoSrc, setFotoSrc] = React.useState<string | null>(fotos[0]?.src ?? null);
   const [fotoPropia, setFotoPropia] = React.useState<string | null>(null);
-  // Clave de lo último que terminó de dibujarse; los botones se habilitan cuando coincide con lo actual.
-  const [dibujado, setDibujado] = React.useState<string | null>(null);
+  const [recursos, setRecursos] = React.useState<Recursos | null>(null);
+  const [encuadre, setEncuadre] = React.useState<Encuadre>(ENCUADRE_INICIAL);
+  const [acomodando, setAcomodando] = React.useState(false);
   const [copiado, setCopiado] = React.useState(false);
+  const punteros = React.useRef(new Map<number, { x: number; y: number }>());
+  const pellizco = React.useRef<{ distancia: number; zoom: number } | null>(null);
 
   const elegirPlantilla = (p: PlantillaPosteo) => {
     setPlantillaId(p.id);
     setTextos({ ...p });
   };
 
-  const clave = `${fotoSrc}|${textos.antetitulo}|${textos.titulo}|${textos.detalle}|${textos.pie}`;
-  const listo = dibujado === clave;
+  const elegirFoto = (src: string) => {
+    setFotoSrc(src);
+    setEncuadre(ENCUADRE_INICIAL);
+  };
+
+  // Los botones se habilitan cuando la foto elegida ya está cargada (el dibujo es instantáneo).
+  const listo = recursos?.src === fotoSrc;
+  const foto = listo ? recursos.foto : null;
 
   React.useEffect(() => {
     let cancelado = false;
-    dibujar(canvasRef.current, fotoSrc, textos).then(() => {
-      if (!cancelado) setDibujado(clave);
+    cargarRecursos(fotoSrc).then((r) => {
+      if (!cancelado) setRecursos(r);
     });
     return () => {
       cancelado = true;
     };
-  }, [fotoSrc, textos, clave]);
+  }, [fotoSrc]);
+
+  React.useEffect(() => {
+    if (recursos && recursos.src === fotoSrc) dibujar(canvasRef.current, recursos, textos, encuadre);
+  }, [recursos, fotoSrc, textos, encuadre]);
+
+  /** Corre o acerca la foto sin dejar huecos (o, si es horizontal, sin que se salga del posteo). */
+  const ajustar = React.useCallback(
+    (cambio: (e: Encuadre) => Encuadre) => {
+      if (!foto) return;
+      setEncuadre((e) => limitar(cambio(e), foto));
+    },
+    [foto]
+  );
+
+  // Rueda del mouse para acercar (en la computadora). Tiene que ser un listener no pasivo para frenar el scroll.
+  React.useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas || !acomodando) return;
+    const rueda = (ev: WheelEvent) => {
+      ev.preventDefault();
+      ajustar((e) => ({ ...e, zoom: e.zoom * Math.exp(-ev.deltaY * 0.0015) }));
+    };
+    canvas.addEventListener("wheel", rueda, { passive: false });
+    return () => canvas.removeEventListener("wheel", rueda);
+  }, [acomodando, ajustar]);
+
+  const escala = () => ANCHO / (canvasRef.current?.getBoundingClientRect().width || ANCHO);
+
+  const distanciaPunteros = () => {
+    const [a, b] = [...punteros.current.values()];
+    return Math.hypot(a.x - b.x, a.y - b.y) || 1;
+  };
+
+  const tocar = (ev: React.PointerEvent<HTMLCanvasElement>) => {
+    if (!acomodando || !foto) return;
+    ev.currentTarget.setPointerCapture(ev.pointerId);
+    punteros.current.set(ev.pointerId, { x: ev.clientX, y: ev.clientY });
+    pellizco.current = punteros.current.size === 2 ? { distancia: distanciaPunteros(), zoom: encuadre.zoom } : null;
+  };
+
+  const arrastrar = (ev: React.PointerEvent<HTMLCanvasElement>) => {
+    const antes = punteros.current.get(ev.pointerId);
+    if (!antes) return;
+    punteros.current.set(ev.pointerId, { x: ev.clientX, y: ev.clientY });
+    const k = escala();
+    const dx = (ev.clientX - antes.x) * k;
+    const dy = (ev.clientY - antes.y) * k;
+    if (punteros.current.size === 1) {
+      ajustar((e) => ({ ...e, x: e.x + dx, y: e.y + dy }));
+    } else if (punteros.current.size === 2 && pellizco.current) {
+      // Con dos dedos: la distancia entre ellos acerca o aleja y el punto medio corre la foto.
+      const base = pellizco.current;
+      const zoom = (base.zoom * distanciaPunteros()) / base.distancia;
+      ajustar((e) => ({ x: e.x + dx / 2, y: e.y + dy / 2, zoom }));
+    }
+  };
+
+  const soltar = (ev: React.PointerEvent<HTMLCanvasElement>) => {
+    punteros.current.delete(ev.pointerId);
+    pellizco.current = null;
+  };
 
   const obtenerArchivo = () =>
     new Promise<File | null>((resolve) =>
@@ -104,12 +192,57 @@ export function GeneradorPosteo({
   return (
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,420px)_minmax(0,1fr)] lg:items-start">
       <div className="grid gap-3 lg:sticky lg:top-6">
-        <canvas
-          ref={canvasRef}
-          width={ANCHO}
-          height={ALTO}
-          className="bg-muted aspect-[4/5] w-full rounded-2xl shadow-xl"
-        />
+        <div className="relative">
+          <canvas
+            ref={canvasRef}
+            width={ANCHO}
+            height={ALTO}
+            onPointerDown={tocar}
+            onPointerMove={arrastrar}
+            onPointerUp={soltar}
+            onPointerCancel={soltar}
+            aria-label={acomodando ? "Posteo: arrastrá la foto para acomodarla" : "Vista previa del posteo"}
+            className={cn(
+              "bg-muted aspect-[4/5] w-full rounded-2xl shadow-xl",
+              acomodando && "ring-gold cursor-grab touch-none ring-4 active:cursor-grabbing"
+            )}
+          />
+          {acomodando && (
+            <p className="pointer-events-none absolute inset-x-0 bottom-3 mx-auto w-fit rounded-full bg-black/70 px-3 py-1.5 text-center text-xs font-medium text-white">
+              Arrastrá la foto · con dos dedos la acercás
+            </p>
+          )}
+        </div>
+        {acomodando ? (
+          <div className="bg-card grid gap-3 rounded-2xl border p-3">
+            <label className="grid gap-1.5 text-sm">
+              <span className="text-muted-foreground text-xs font-semibold">Acercar</span>
+              <input
+                type="range"
+                min={1}
+                max={ZOOM_MAX}
+                step={0.01}
+                value={encuadre.zoom}
+                onChange={(e) => ajustar((x) => ({ ...x, zoom: Number(e.target.value) }))}
+                className="accent-gold w-full"
+              />
+            </label>
+            <div className="grid grid-cols-2 gap-2">
+              <Button type="button" variant="outline" className="h-11" onClick={() => setEncuadre(ENCUADRE_INICIAL)}>
+                <Crosshair className="size-4" /> Centrar
+              </Button>
+              <Button type="button" className="h-11" onClick={() => setAcomodando(false)}>
+                <Check className="size-4" /> Listo
+              </Button>
+            </div>
+          </div>
+        ) : (
+          fotoSrc && (
+            <Button type="button" variant="outline" className="h-11" onClick={() => setAcomodando(true)} disabled={!listo}>
+              <Move className="size-4" /> Acomodar la foto
+            </Button>
+          )
+        )}
         <div className="grid grid-cols-2 gap-2">
           <Button type="button" size="lg" className="h-12" onClick={compartir} disabled={!listo}>
             {listo ? <Share2 className="size-4" /> : <Loader2 className="size-4 animate-spin" />} Compartir
@@ -150,7 +283,7 @@ export function GeneradorPosteo({
               <button
                 key={f.id}
                 type="button"
-                onClick={() => setFotoSrc(f.src)}
+                onClick={() => elegirFoto(f.src)}
                 className={cn(
                   "aspect-square overflow-hidden rounded-lg border-2",
                   fotoSrc === f.src ? "border-gold ring-gold/30 ring-4" : "border-transparent"
@@ -179,7 +312,7 @@ export function GeneradorPosteo({
               if (!f) return;
               const url = URL.createObjectURL(f);
               setFotoPropia(url);
-              setFotoSrc(url);
+              elegirFoto(url);
               e.target.value = "";
             }}
           />
@@ -253,13 +386,9 @@ function rectRedondeado(ctx: CanvasRenderingContext2D, x: number, y: number, w: 
   ctx.closePath();
 }
 
-async function dibujar(
-  canvas: HTMLCanvasElement | null,
-  fotoSrc: string | null,
-  t: Pick<PlantillaPosteo, "antetitulo" | "titulo" | "detalle" | "pie">
-) {
-  const ctx = canvas?.getContext("2d");
-  if (!canvas || !ctx) return;
+let logoCargado: Promise<HTMLImageElement | null> | null = null;
+
+async function cargarRecursos(src: string | null): Promise<Recursos> {
   const fam = familiaMarca();
   await Promise.all([
     document.fonts.load(`800 80px ${fam}`),
@@ -267,35 +396,76 @@ async function dibujar(
     document.fonts.load(`400 44px ${fam}`),
     document.fonts.load(`700 44px ${fam}`),
   ]).catch(() => undefined);
-  const [foto, logo] = await Promise.all([
-    fotoSrc ? cargarImagen(fotoSrc).catch(() => null) : Promise.resolve(null),
-    cargarImagen(MARCA.logoEscudo).catch(() => null),
-  ]);
+  logoCargado ??= cargarImagen(MARCA.logoEscudo).catch(() => null);
+  const [foto, logo] = await Promise.all([src ? cargarImagen(src).catch(() => null) : Promise.resolve(null), logoCargado]);
+  return { src, foto, logo, fam };
+}
 
-  // Fondo + foto a sangre (object-fit: cover)
+/** Foto horizontal: el recorte vertical cortaría el auto, así que va entera sobre la misma foto desenfocada. */
+function esHorizontal(foto: HTMLImageElement) {
+  return foto.width / foto.height > 1.05;
+}
+
+/** Dónde se dibuja la foto (la principal, no el fondo desenfocado) según el encuadre. */
+function rectFoto(foto: HTMLImageElement, e: Encuadre) {
+  if (!esHorizontal(foto)) {
+    // A sangre (object-fit: cover), corrida y acercada.
+    const s = Math.max(ANCHO / foto.width, ALTO / foto.height) * e.zoom;
+    const w = foto.width * s;
+    const h = foto.height * s;
+    return { x: (ANCHO - w) / 2 + e.x, y: (ALTO - h) / 2 + e.y, w, h };
+  }
+  // A todo el ancho, entre el recuadro de arriba (~330px) y el texto + escudo de abajo (~340px).
+  const h0 = (foto.height / foto.width) * ANCHO;
+  const centro = Math.max(330, Math.min(ALTO * 0.56 - h0 / 2 + 40, ALTO - h0 - 340)) + h0 / 2;
+  const w = ANCHO * e.zoom;
+  const h = h0 * e.zoom;
+  return { x: (ANCHO - w) / 2 + e.x, y: centro - h / 2 + e.y, w, h };
+}
+
+/** Mantiene el encuadre dentro de lo razonable: sin bordes vacíos y sin perder la foto de vista. */
+function limitar(e: Encuadre, foto: HTMLImageElement): Encuadre {
+  const zoom = Math.min(ZOOM_MAX, Math.max(1, e.zoom));
+  const r = rectFoto(foto, { x: 0, y: 0, zoom });
+  const maxX = Math.max(0, (r.w - ANCHO) / 2);
+  const entre = (v: number, min: number, max: number) => Math.min(max, Math.max(min, v));
+  if (!esHorizontal(foto)) {
+    const maxY = Math.max(0, (r.h - ALTO) / 2);
+    return { zoom, x: entre(e.x, -maxX, maxX), y: entre(e.y, -maxY, maxY) };
+  }
+  // La foto horizontal se puede subir o bajar mientras su centro quede dentro del posteo.
+  const centro = r.y + r.h / 2;
+  return { zoom, x: entre(e.x, -maxX, maxX), y: entre(e.y, -centro, ALTO - centro) };
+}
+
+function dibujar(
+  canvas: HTMLCanvasElement | null,
+  { foto, logo, fam }: Recursos,
+  t: Pick<PlantillaPosteo, "antetitulo" | "titulo" | "detalle" | "pie">,
+  encuadre: Encuadre
+) {
+  const ctx = canvas?.getContext("2d");
+  if (!canvas || !ctx) return;
+
+  // Fondo + foto
   ctx.fillStyle = `rgb(${AZUL})`;
   ctx.fillRect(0, 0, ANCHO, ALTO);
   if (foto) {
-    const escala = Math.max(ANCHO / foto.width, ALTO / foto.height);
-    const w = foto.width * escala;
-    const h = foto.height * escala;
-    const horizontal = foto.width / foto.height > 1.05;
-    if (!horizontal) {
-      ctx.drawImage(foto, (ANCHO - w) / 2, (ALTO - h) / 2, w, h);
+    const r = rectFoto(foto, encuadre);
+    if (!esHorizontal(foto)) {
+      ctx.drawImage(foto, r.x, r.y, r.w, r.h);
     } else {
-      // Foto horizontal: el recorte vertical cortaría el auto. Se usa la misma foto
-      // desenfocada de fondo y encima la foto entera, a todo el ancho.
+      const s = Math.max(ANCHO / foto.width, ALTO / foto.height);
+      const w = foto.width * s;
+      const h = foto.height * s;
       ctx.save();
       ctx.filter = "blur(28px) brightness(0.55)";
       ctx.drawImage(foto, (ANCHO - w) / 2 - 40, (ALTO - h) / 2 - 40, w + 80, h + 80);
       ctx.restore();
-      const hFoto = (foto.height / foto.width) * ANCHO;
-      // Entre el recuadro de arriba (~330px) y el texto + escudo de abajo (~340px)
-      const yFoto = Math.max(330, Math.min(ALTO * 0.56 - hFoto / 2 + 40, ALTO - hFoto - 340));
       ctx.save();
       ctx.shadowColor = "rgba(0,0,0,0.45)";
       ctx.shadowBlur = 40;
-      ctx.drawImage(foto, 0, yFoto, ANCHO, hFoto);
+      ctx.drawImage(foto, r.x, r.y, r.w, r.h);
       ctx.restore();
     }
   }
