@@ -134,3 +134,14 @@ En una conversación nueva con Claude, decile algo como:
 > "Estoy trabajando en el repo estebanmalpassi/consicionaria-esteban, leé
 > ESTADO_DEL_PROYECTO.md para el contexto y seguimos con [lo que
 > necesites]."
+
+## Laboratorio (entorno de prueba)
+
+- Rama de GitHub `laboratorio`: ahí se prueban ideas sin tocar la web real.
+  Lo que se sube a esa rama se publica como **Preview** en Vercel (link
+  propio, distinto de cartucciaautomotores.vercel.app).
+- Base de datos propia: rama `LABORATORIO` de Neon (proyecto
+  `green-meadow-37821606`, sin vencimiento). En Vercel, `DATABASE_URL`
+  tiene dos valores: **Production** → rama `production` de Neon (la real) y
+  **Preview / rama laboratorio** → rama `LABORATORIO` de Neon.
+- Las ideas que funcionen se pasan a `main` desde la conversación principal.
