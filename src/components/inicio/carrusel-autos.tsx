@@ -5,6 +5,8 @@ import { CarFront } from "lucide-react";
 import Splide from "@splidejs/splide";
 import "@splidejs/splide/css/core";
 
+import { cn } from "@/lib/utils";
+
 export interface AutoCarrusel {
   id: string;
   titulo: string;
@@ -62,8 +64,7 @@ export function CarruselAutos({ autos }: { autos: AutoCarrusel[] }) {
               <article className="flex h-full flex-col overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03]">
                 <div className="relative aspect-[4/3] overflow-hidden bg-[radial-gradient(ellipse_at_center,#1f3348_0%,#0d1824_72%)]">
                   {a.foto ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={a.foto} alt={a.titulo} className="size-full object-cover" loading="lazy" draggable={false} />
+                    <FotoAuto src={a.foto} alt={a.titulo} />
                   ) : (
                     <FotoEjemplo />
                   )}
@@ -93,6 +94,36 @@ export function CarruselAutos({ autos }: { autos: AutoCarrusel[] }) {
         </ul>
       </div>
     </section>
+  );
+}
+
+/**
+ * Foto del auto. Las horizontales llenan la tarjeta; las verticales (por ejemplo
+ * las de Instagram, 4:5 o 9:16) se ven enteras, con la misma foto desenfocada de
+ * fondo, para no cortarle el auto.
+ */
+function FotoAuto({ src, alt }: { src: string; alt: string }) {
+  const [vertical, setVertical] = React.useState(false);
+  const medir = (img: HTMLImageElement | null) => {
+    if (img?.complete && img.naturalWidth) setVertical(img.naturalHeight > img.naturalWidth * 1.05);
+  };
+  return (
+    <>
+      {vertical && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={src} alt="" aria-hidden className="absolute inset-0 size-full scale-110 object-cover blur-xl brightness-50" draggable={false} />
+      )}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        ref={medir}
+        onLoad={(e) => medir(e.currentTarget)}
+        src={src}
+        alt={alt}
+        className={cn("relative size-full", vertical ? "object-contain" : "object-cover")}
+        loading="lazy"
+        draggable={false}
+      />
+    </>
   );
 }
 
