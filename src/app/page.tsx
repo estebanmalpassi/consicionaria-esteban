@@ -1,7 +1,5 @@
-import Link from "next/link";
 import { ArrowDown, BadgeCheck, CarFront, FileCheck2, Handshake, MapPin, Sparkles } from "lucide-react";
 
-import { auth } from "@/lib/auth";
 import { getAgencia } from "@/lib/dealer";
 import { FOTO_SELECT, fotoUrl } from "@/lib/fotos";
 import { MARCA, linkWhatsapp } from "@/lib/marca";
@@ -23,7 +21,7 @@ const SERVICIOS = [
 
 /** Portada pública para clientes: quiénes somos, video y autos disponibles. */
 export default async function Inicio({ searchParams }: PageProps<"/">) {
-  const [session, agencia, params] = await Promise.all([auth(), getAgencia(), searchParams]);
+  const [agencia, params] = await Promise.all([getAgencia(), searchParams]);
   const muestra = params.muestra === "1";
   // Solo los autos de la agencia: otras cuentas no pueden publicar en esta portada.
   const stock = muestra || !agencia
@@ -61,21 +59,14 @@ export default async function Inicio({ searchParams }: PageProps<"/">) {
           `¡Hola! Me interesa el ${a.brand} ${a.model}${a.version ? ` ${a.version}` : ""} ${a.year} que vi en la página. ¿Sigue disponible?`
         ),
       }));
-  const esEquipo = session?.user?.role === "DEALER_OWNER" || session?.user?.role === "DEALER_STAFF";
 
   return (
     <div className="flex-1 overflow-x-hidden bg-[#0b1520] font-[family-name:var(--font-marca)] text-white">
       {/* Barra superior */}
       <header className="absolute inset-x-0 top-0 z-20">
-        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
+        <div className="mx-auto flex h-16 max-w-6xl items-center px-4 sm:px-6">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={MARCA.logoCirculo} alt={MARCA.nombre} className="size-11 rounded-full ring-1 ring-[#d4ad55]/40" />
-          <Link
-            href={esEquipo ? "/dealer" : "/login"}
-            className="rounded-full border border-white/15 px-4 py-2 text-xs font-semibold tracking-wide text-white/80 transition hover:border-[#d4ad55]/60 hover:text-white"
-          >
-            {esEquipo ? "Ir al panel" : "Acceso equipo"}
-          </Link>
         </div>
       </header>
 
