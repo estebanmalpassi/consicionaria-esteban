@@ -140,8 +140,9 @@ En una conversación nueva con Claude, decile algo como:
 - Rama de GitHub `laboratorio`: ahí se prueban ideas sin tocar la web real.
   Lo que se sube a esa rama se publica como **Preview** en Vercel (link
   propio, distinto de cartucciaautomotores.vercel.app).
-- Base de datos propia: rama `LABORATORIO` de Neon (proyecto
+- Base de datos propia: rama `laboratorio` de Neon (proyecto
   `green-meadow-37821606`, sin vencimiento). En Vercel, `DATABASE_URL`
   tiene dos valores: **Production** → rama `production` de Neon (la real) y
-  **Preview / rama laboratorio** → rama `LABORATORIO` de Neon.
+  **Preview** (todas las ramas de prueba, no solo `laboratorio`) → rama
+  `laboratorio` de Neon, creada con datos como copia de `production`.
 - Las ideas que funcionen se pasan a `main` desde la conversación principal.
