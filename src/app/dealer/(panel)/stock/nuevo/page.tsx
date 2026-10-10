@@ -5,7 +5,7 @@ import { requireDealer } from "@/lib/dealer";
 import { FormularioVehiculo } from "@/components/dealer/formulario-vehiculo";
 
 export default async function NuevoAutoPage() {
-  await requireDealer();
+  const { esDueno } = await requireDealer();
   return (
     <div className="mx-auto grid max-w-3xl gap-6 px-4 py-8 sm:px-6">
       <div>
@@ -17,7 +17,7 @@ export default async function NuevoAutoPage() {
           Desde el celular, tocá cada casillero y sacá la foto directo con la cámara. Se achican solas antes de subirse.
         </p>
       </div>
-      <FormularioVehiculo />
+      <FormularioVehiculo conCosto={esDueno} />
     </div>
   );
 }

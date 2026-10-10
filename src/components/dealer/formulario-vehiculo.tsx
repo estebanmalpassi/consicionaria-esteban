@@ -188,7 +188,16 @@ export function formDataAVehiculo(fd: FormData): VehiculoValues {
 }
 
 /** Alta / edición de un auto del stock, con fotos. */
-export function FormularioVehiculo({ vehicleId, inicial }: { vehicleId?: string; inicial?: VehiculoInicial }) {
+/** `conCosto` = false para los empleados: el costo y la ganancia los ve solo el dueño. */
+export function FormularioVehiculo({
+  vehicleId,
+  inicial,
+  conCosto = true,
+}: {
+  vehicleId?: string;
+  inicial?: VehiculoInicial;
+  conCosto?: boolean;
+}) {
   const router = useRouter();
   const [fotos, setFotos] = React.useState<FotoPendiente[]>([]);
   const [estado, setEstado] = React.useState<string | null>(null);
@@ -254,7 +263,7 @@ export function FormularioVehiculo({ vehicleId, inicial }: { vehicleId?: string;
 
       <section className="grid gap-3" hidden={paso !== 1}>
         {!alta && <h2 className="font-semibold">Datos del auto</h2>}
-        <CamposVehiculo inicial={inicial} errorEn={error?.field} />
+        <CamposVehiculo inicial={inicial} errorEn={error?.field} conPrecioCompra={conCosto} />
         <Campo label="Descripción / observaciones" htmlFor="description">
           <AreaTexto id="description" name="description" defaultValue={(inicial?.description as string) ?? ""} placeholder="Único dueño, service oficial, cubiertas nuevas…" />
         </Campo>

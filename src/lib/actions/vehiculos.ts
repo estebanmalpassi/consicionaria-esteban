@@ -50,7 +50,8 @@ export async function guardarVehiculoAction(
     fuelType: v.fuelType,
     transmission: v.transmission,
     priceArs: v.priceArs,
-    purchasePriceArs: v.purchasePriceArs || null,
+    // Los empleados no ven el costo: si guardan, no se toca el que cargó el dueño.
+    ...(ctx.esDueno && { purchasePriceArs: v.purchasePriceArs || null }),
     description: nn(v.description),
     city: ctx.dealership.addressCity,
     province: ctx.dealership.province,

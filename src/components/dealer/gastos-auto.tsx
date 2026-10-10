@@ -29,7 +29,7 @@ const INICIALES: Record<string, string> = {
 /**
  * Costos del auto: lo que pagó la agencia más cada gasto que se le hizo
  * (chapa, cubiertas, service...) y la ganancia real contra el precio de venta.
- * Solo se ve dentro del panel: no sale en la web, ni en boletos ni en recibos.
+ * Solo la ve el dueño: no sale en la web, ni en boletos ni en recibos, y los empleados no la ven.
  */
 export function GastosAuto({
   vehicleId,
@@ -81,7 +81,7 @@ export function GastosAuto({
           Costos y ganancia
         </h2>
         <span className="bg-muted text-muted-foreground inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-semibold">
-          <Lock className="size-3" /> Solo el equipo
+          <Lock className="size-3" /> Solo el dueño
         </span>
       </div>
 
