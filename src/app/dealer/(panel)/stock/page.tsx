@@ -35,7 +35,7 @@ function diasDesde(fecha: Date, hoy: Date) {
 }
 
 export default async function StockPage({ searchParams }: PageProps<"/dealer/stock">) {
-  const { dealership } = await requireDealer();
+  const { dealership, esDueno } = await requireDealer();
   const { filtro = "disponibles", q } = (await searchParams) as { filtro?: string; q?: string };
 
   const where = {
@@ -135,7 +135,8 @@ export default async function StockPage({ searchParams }: PageProps<"/dealer/sto
             const dias = diasDesde(a.createdAt, hoy);
             const precio = Number(a.priceArs);
             const gastos = a.expenses.reduce((s, g) => s + Number(g.amountArs), 0);
-            const r = resultadoAuto(precio, a.purchasePriceArs ? Number(a.purchasePriceArs) : null, gastos);
+            // El margen lo ve solo el dueño.
+            const r = esDueno ? resultadoAuto(precio, a.purchasePriceArs ? Number(a.purchasePriceArs) : null, gastos) : null;
             return (
               <Link
                 key={a.id}

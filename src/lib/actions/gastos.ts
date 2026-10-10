@@ -19,6 +19,7 @@ const gastoSchema = z.object({
 export async function agregarGastoAction(raw: z.input<typeof gastoSchema>): Promise<ActionResult> {
   const ctx = await getDealerOrNull();
   if (!ctx) return { ok: false, error: "Tu sesión expiró. Volvé a iniciar sesión." };
+  if (!ctx.esDueno) return { ok: false, error: "Los costos del auto los maneja solo el dueño." };
   const parsed = gastoSchema.safeParse(raw);
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Datos inválidos." };
   const g = parsed.data;
@@ -37,6 +38,7 @@ export async function agregarGastoAction(raw: z.input<typeof gastoSchema>): Prom
 export async function borrarGastoAction(gastoId: string): Promise<ActionResult> {
   const ctx = await getDealerOrNull();
   if (!ctx) return { ok: false, error: "Tu sesión expiró. Volvé a iniciar sesión." };
+  if (!ctx.esDueno) return { ok: false, error: "Los costos del auto los maneja solo el dueño." };
   const gasto = await prisma.vehicleExpense.findFirst({
     where: { id: gastoId, vehicle: { dealershipId: ctx.dealership.id } },
     select: { id: true },

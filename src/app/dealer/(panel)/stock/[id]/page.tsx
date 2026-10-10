@@ -17,7 +17,7 @@ import { GaleriaVehiculo } from "@/components/dealer/galeria-vehiculo";
 
 export default async function FichaAutoPage({ params }: PageProps<"/dealer/stock/[id]">) {
   const { id } = await params;
-  const { dealership } = await requireDealer();
+  const { dealership, esDueno } = await requireDealer();
   const auto = await prisma.vehicle.findFirst({
     where: { id, dealershipId: dealership.id },
     include: {
@@ -108,18 +108,22 @@ export default async function FichaAutoPage({ params }: PageProps<"/dealer/stock
         </div>
       </div>
 
-      <GastosAuto
-        vehicleId={auto.id}
-        precioVenta={precio}
-        precioCompra={costo}
-        gastos={auto.expenses.map((g) => ({ ...g, amountArs: Number(g.amountArs) }))}
-      />
+      {/* Costos y ganancia: solo el dueño. */}
+      {esDueno && (
+        <GastosAuto
+          vehicleId={auto.id}
+          precioVenta={precio}
+          precioCompra={costo}
+          gastos={auto.expenses.map((g) => ({ ...g, amountArs: Number(g.amountArs) }))}
+        />
+      )}
 
       <details className="bg-card group rounded-2xl border p-4 sm:p-6">
         <summary className="cursor-pointer font-semibold">Editar datos del auto</summary>
         <div className="mt-6">
           <FormularioVehiculo
             vehicleId={auto.id}
+            conCosto={esDueno}
             inicial={{
               patente: auto.patente,
               brand: auto.brand,
@@ -134,7 +138,7 @@ export default async function FichaAutoPage({ params }: PageProps<"/dealer/stock
               fuelType: auto.fuelType,
               transmission: auto.transmission,
               priceArs: precio,
-              purchasePriceArs: costo,
+              purchasePriceArs: esDueno ? costo : null,
               description: auto.description,
             }}
           />
