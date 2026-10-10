@@ -82,7 +82,7 @@ export async function registerAction(
   });
 
   try {
-    await signIn("credentials", { email: normalizedEmail, password, redirect: false });
+    await signIn("credentials", { email: normalizedEmail, password, confianza: "1", redirect: false });
   } catch {
     return {
       ok: true,
