@@ -1,8 +1,9 @@
-import { NextResponse } from "next/server";
+import { NextResponse, type NextFetchEvent, type NextRequest } from "next/server";
 
 import { auth } from "@/lib/auth";
+import { MARCA_SESION_TEMPORAL, sinVencimiento } from "@/lib/sesion-temporal";
 
-export default auth((req) => {
+const conSesion = auth((req) => {
   const isDealerRoute = req.nextUrl.pathname.startsWith("/dealer");
   if (!isDealerRoute) return NextResponse.next();
 
@@ -17,8 +18,17 @@ export default auth((req) => {
     return NextResponse.redirect(new URL("/", req.nextUrl.origin));
   }
 
-  return NextResponse.next();
+  const res = NextResponse.next();
+  if (!req.auth.user.confianza) res.headers.set(MARCA_SESION_TEMPORAL, "1");
+  return res;
 });
+
+export default async function proxy(req: NextRequest, ev: NextFetchEvent) {
+  const res = await conSesion(req, ev as never);
+  if (!res?.headers.has(MARCA_SESION_TEMPORAL)) return res;
+  res.headers.delete(MARCA_SESION_TEMPORAL);
+  return sinVencimiento(res);
+}
 
 export const config = {
   matcher: ["/dealer/:path*"],
